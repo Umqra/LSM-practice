@@ -1,7 +1,7 @@
 using DataLayer.OperationLog.Operations;
 using DataLayer.Utilities;
 
-namespace DataLayer
+namespace DataLayer.OperationLog
 {
     public class OpLogManager : IOpLogReader, IOpLogWriter
     {

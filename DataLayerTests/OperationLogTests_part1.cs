@@ -2,6 +2,8 @@
 using DataLayer;
 using DataLayer.DataModel;
 using DataLayer.MemoryCopy;
+using DataLayer.OperationLog;
+using DataLayer.OperationLog.Operations;
 using DataLayer.Utilities;
 using DataLayer.Warmup;
 using FluentAssertions;

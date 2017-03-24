@@ -1,7 +1,6 @@
 using System.IO;
-using DataLayer.OperationLog.Operations;
 
-namespace DataLayer
+namespace DataLayer.OperationLog.Operations
 {
     //учесть что надо прыгать по определённому офсету в бинарно сериализованном файле
     // ветки с решенными этапами локально держат

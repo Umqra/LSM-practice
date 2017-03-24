@@ -1,4 +1,5 @@
 using DataLayer.MemoryCopy;
+using DataLayer.OperationLog;
 
 namespace DataLayer.Warmup
 {

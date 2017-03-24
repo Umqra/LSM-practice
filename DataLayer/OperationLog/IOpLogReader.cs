@@ -1,6 +1,6 @@
 using DataLayer.OperationLog.Operations;
 
-namespace DataLayer
+namespace DataLayer.OperationLog
 {
     public interface IOpLogReader
     {
