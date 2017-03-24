@@ -4,6 +4,6 @@ namespace DataLayer.Utilities
 {
     public interface IFile
     {
-        Stream GetStream(FileAccess accessMode);
+        Stream GetStream(FileMode mode, FileAccess accessMode);
     }
 }

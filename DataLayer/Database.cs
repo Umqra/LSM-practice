@@ -7,11 +7,18 @@ namespace DataLayer
     // а так же управляет мерджингом
     class Database
     {
+        public Database(string workingDirectory)
+        {
+            
+        }
         public void Add(Item item)
         {
             throw new NotImplementedException();
         }
 
-        public void RestoreMemoryCopyFromSnapshot() { throw new NotImplementedException();}
+        public void RestoreMemoryCopyFromSnapshot()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

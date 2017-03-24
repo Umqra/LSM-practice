@@ -1,58 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DataLayer.DataModel;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
-using DataLayer.Utilities;
 using FluentAssertions;
 using NUnit.Framework;
 
 namespace DataLayerTests
 {
-    public class MockFile : IFile
-    {
-        private MemoryStream stream;
-
-        public MockFile()
-        {
-            stream = new MemoryStream();
-        }
-        public Stream GetStream(FileAccess accessMode)
-        {
-            stream.Flush();
-            stream.Position = 0;
-            return stream;
-        }
-
-        public void CorruptSuffix(int brokenBytes = 2)
-        {
-            var data = stream.ToArray();
-            stream = new MemoryStream(data.Take(data.Length - brokenBytes).ToArray());
-        }
-    }
-
-    public static class ParamsTestCaseData
-    {
-        public static TestCaseData Create<T>(params T[] items)
-        {
-            return new TestCaseData(items).SetName(string.Join(", ", items));
-        }
-    }
-
     [TestFixture]
     class OperationLogTests
     {
         private MockFile file;
-        private OpLogManager manager;
+        private IOperationLogWriter writer;
+        private IOperationLogRepairer repairer;
         [SetUp]
         public void Setup()
         {
             file = new MockFile();
-            manager = new OpLogManager(file, new OperationSerializer());
+            writer = GetWriter();
+            repairer = new OperationLogRepairer();
+        }
+
+        private IOperationLogReader GetReader()
+        {
+            return new OperationLogReader(file.GetStream(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer());
+        }
+
+        private IOperationLogWriter GetWriter()
+        {
+            return new OperationLogWriter(file.GetStream(FileMode.Append, FileAccess.Write), new OperationSerializer());
         }
 
         private static TestCaseData[] singleOperationTests = {
@@ -64,52 +41,88 @@ namespace DataLayerTests
         [TestCaseSource(nameof(singleOperationTests))]
         public void TestSingleOperation(IOperation operation)
         {
-            manager.Write(operation);
-            IOperation result;
-            manager.Read(out result).Should().BeTrue();
-            result.Should().Be(operation);
-            manager.Read(out result).Should().BeFalse();
+            writer.Write(operation);
+            using (var reader = GetReader())
+            {
+                IOperation result;
+                reader.Read(out result).Should().BeTrue();
+                result.Should().Be(operation);
+                reader.Read(out result).Should().BeFalse();
+            }
         }
 
         private static readonly TestCaseData[] manyOperationTests =
         {
             ParamsTestCaseData.Create<IOperation>(
-                new AddOperation(Item.CreateItem("a", "b")), 
-                new AddOperation(Item.CreateItem("b", "c")), 
-                new DeleteOperation(Item.CreateTombStone("a"))),
+                new AddOperation(Item.CreateItem("aa", "bbbb")), 
+                new AddOperation(Item.CreateItem("bbbb", "c")), 
+                new DeleteOperation(Item.CreateTombStone("aa"))),
             ParamsTestCaseData.Create<IOperation>(
-                new DeleteOperation(Item.CreateTombStone("a")), 
-                new AddOperation(Item.CreateItem("b", "c")))
+                new DeleteOperation(Item.CreateTombStone("aa")), 
+                new AddOperation(Item.CreateItem("b", "cccc")))
         };
 
         [TestCaseSource(nameof(manyOperationTests))]
         public void TestManyOperations(params IOperation[] operations)
         {
             foreach (var operation in operations)
-                manager.Write(operation);
-            IOperation result;
-            foreach (var operation in operations)
+                writer.Write(operation);
+            using (var reader = GetReader())
             {
-                manager.Read(out result).Should().BeTrue();
-                result.Should().Be(operation);
+                IOperation result;
+                foreach (var operation in operations)
+                {
+                    reader.Read(out result).Should().BeTrue();
+                    result.Should().Be(operation);
+                }
+                reader.Read(out result).Should().BeFalse();
             }
-            manager.Read(out result).Should().BeFalse();
         }
 
         [TestCaseSource(nameof(manyOperationTests))]
         public void TestManyOperations_Corrupted(params IOperation[] operations)
         {
             foreach (var operation in operations)
-                manager.Write(operation);
-            file.CorruptSuffix();
+                writer.Write(operation);
 
-            IOperation result;
-            foreach (var operation in operations.Take(operations.Length - 1))
+            file.CorruptSuffix();
+            repairer.RepairLog(file);
+
+            using (var restoredReader = GetReader())
             {
-                manager.Read(out result).Should().BeTrue();
-                result.Should().Be(operation);
+                IOperation result;
+                foreach (var operation in operations.Take(operations.Length - 1))
+                {
+                    restoredReader.Read(out result).Should().BeTrue();
+                    result.Should().Be(operation);
+                }
+                restoredReader.Read(out result).Should().BeFalse();
             }
-            manager.Read(out result).Should().BeFalse();
+        }
+
+        [TestCaseSource(nameof(manyOperationTests))]
+        public void TestManyOperations_Corrupted_ThenContinue(params IOperation[] operations)
+        {
+            foreach (var operation in operations)
+                writer.Write(operation);
+
+            file.CorruptSuffix();
+            repairer.RepairLog(file);
+
+            var newOperation = new AddOperation(Item.CreateItem("11", "22"));
+            using (var restoredWriter = GetWriter())
+            { 
+                restoredWriter.Write(newOperation);
+            }
+            using (var restoredReader = GetReader())
+            {
+                foreach (var operation in operations.Take(operations.Length - 1).Concat(new[] { newOperation }))
+                {
+                    IOperation result;
+                    restoredReader.Read(out result).Should().BeTrue();
+                    result.Should().Be(operation);
+                }
+            }
         }
     }
 }

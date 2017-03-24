@@ -17,9 +17,9 @@ namespace DataLayer.OperationLog.Operations
             Item = item;
         }
 
-        public void Apply(IMemTable memTable)
+        public void Apply(IMemoryTable memoryTable)
         {
-            throw new NotImplementedException();
+            memoryTable.Add(Item);
         }
 
         private bool Equals(AddOperation other)

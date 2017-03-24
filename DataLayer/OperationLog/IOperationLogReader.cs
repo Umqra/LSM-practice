@@ -1,8 +1,9 @@
+using System;
 using DataLayer.OperationLog.Operations;
 
 namespace DataLayer.OperationLog
 {
-    public interface IOpLogReader
+    public interface IOperationLogReader : IDisposable
     {
         /// <summary>
         /// Reads operations from operation log. </summary>

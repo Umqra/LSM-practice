@@ -1,9 +1,6 @@
 ﻿using System;
-using DataLayer;
 using DataLayer.DataModel;
 using DataLayer.MemoryCopy;
-using DataLayer.OperationLog;
-using DataLayer.OperationLog.Operations;
 using DataLayer.Utilities;
 using FluentAssertions;
 using NUnit.Framework;
@@ -13,19 +10,20 @@ namespace DataLayerTests
     [TestFixture]
     public class MemTableTests
     {
-        private MemTable memTable;
+        private MemoryTableManager memoryTable;
         private string filePath;
 
         [SetUp]
         public void SetUp()
         {
             filePath = Guid.NewGuid().ToString();
-            memTable = new MemTable(new OpLogManager(new File(filePath), new OperationSerializer()));
+            memoryTable = MemoryTableManager.RestoreFromOperationLog(new File(filePath));
         }
 
         [TearDown]
         public void TearDown()
         {
+            memoryTable.Dispose();
             if (System.IO.File.Exists(filePath))
                 System.IO.File.Delete(filePath);
         }
@@ -36,11 +34,11 @@ namespace DataLayerTests
             var item1 = Item.CreateItem(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
             var item2 = Item.CreateItem(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
 
-            memTable.Add(item1);
-            memTable.Add(item2);
+            memoryTable.Add(item1);
+            memoryTable.Add(item2);
 
-            var itemFromTable1 = memTable.Get(item1.Key);
-            var itemFromTable2 = memTable.Get(item2.Key);
+            var itemFromTable1 = memoryTable.Get(item1.Key);
+            var itemFromTable2 = memoryTable.Get(item2.Key);
 
             itemFromTable1.Should().Be(item1);
             itemFromTable2.Should().Be(item2);
@@ -50,16 +48,13 @@ namespace DataLayerTests
         public void Should_overwrite_item_with_same_key()
         {
             var key = Guid.NewGuid().ToString();
-
             var item = Item.CreateItem(key, Guid.NewGuid().ToString());
-            var tombstone = Item.CreateTombStone(key);
 
-            memTable.Add(item);
-            memTable.Add(tombstone);
+            memoryTable.Add(item);
+            memoryTable.Get(key).Should().Be(item);
 
-            var itemFromTable = memTable.Get(key);
-
-            itemFromTable.Should().Be(tombstone);
+            memoryTable.Delete(key);
+            memoryTable.Get(key).Should().Be(null);
         }
     }
 }

@@ -10,9 +10,9 @@ namespace DataLayer.Utilities
             this.path = path;
         }
 
-        public Stream GetStream(FileAccess accessMode)
+        public Stream GetStream(FileMode mode, FileAccess accessMode)
         {
-            return System.IO.File.Open(path, FileMode.OpenOrCreate, accessMode);
+            return System.IO.File.Open(path, mode, accessMode);
         }
     }
 }
