@@ -1,4 +1,8 @@
-﻿namespace DataLayer.DataModel
+﻿using System;
+using System.IO;
+using System.Text;
+
+namespace DataLayer.DataModel
 {
     public class Item
     {

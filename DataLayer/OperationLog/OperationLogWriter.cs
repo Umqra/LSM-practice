@@ -18,7 +18,8 @@ namespace DataLayer.OperationLog
         public void Write(IOperation operation)
         {
             var serialized = serializer.Serialize(operation);
-            logStream.Write(serialized, 0, serialized.Length);
+            lock (logStream)
+                logStream.Write(serialized, 0, serialized.Length);
         }
 
         public void Dispose()

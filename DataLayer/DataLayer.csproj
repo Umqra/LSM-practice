@@ -30,6 +30,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ByteSizeLib, Version=1.2.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ByteSize.1.2.3\lib\net45\ByteSizeLib.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="C5, Version=2.4.5947.17248, Culture=neutral, PublicKeyToken=282361b99ded7e8e, processorArchitecture=MSIL">
+      <HintPath>..\packages\C5.2.4.5947.17249\lib\net45\C5.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -40,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database.cs" />
+    <Compile Include="DataModel\ItemSerializer.cs" />
     <Compile Include="DiskTablesMerger.cs" />
     <Compile Include="MemoryCopy\IMemoryTable.cs" />
     <Compile Include="MemoryCopy\MemoryTable.cs" />
@@ -60,12 +69,17 @@
     <Compile Include="OperationLog\Operations\StreamExtensions.cs" />
     <Compile Include="OperationLog\OperationLogWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="SortedDiskTable\SortedDiskTableConfiguration.cs" />
+    <Compile Include="SortedDiskTable\SortedDiskTable.cs" />
     <Compile Include="Utilities\File.cs" />
     <Compile Include="Utilities\IFile.cs" />
     <Compile Include="Warmup\IOperationLogApplier.cs" />
     <Compile Include="Warmup\OperationLogApplier.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -14,7 +14,7 @@ namespace DataLayer.MemoryCopy
         private readonly IOperationLogWriter logWriter;
         private readonly IMemoryTable memoryTable;
 
-        public MemoryTableManager(IOperationLogWriter logWriter, IMemoryTable memoryTable)
+        private MemoryTableManager(IOperationLogWriter logWriter, IMemoryTable memoryTable)
         {
             this.logWriter = logWriter;
             this.memoryTable = memoryTable;
