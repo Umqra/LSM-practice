@@ -45,8 +45,12 @@
     <Compile Include="MemoryCopy\MemTable.cs" />
     <Compile Include="OperationLog\IOpLogReader.cs" />
     <Compile Include="OperationLog\IOpLogWriter.cs" />
+    <Compile Include="OperationLog\Operations\AddOperationSerializer.cs" />
+    <Compile Include="OperationLog\Operations\DeleteOperationSerializer.cs" />
     <Compile Include="OperationLog\Operations\IOperationSerializer.cs" />
     <Compile Include="OperationLog\Operations\IOperation.cs" />
+    <Compile Include="OperationLog\Operations\AddOperation.cs" />
+    <Compile Include="OperationLog\Operations\DeleteOperation.cs" />
     <Compile Include="OperationLog\Operations\OperationSerializer.cs" />
     <Compile Include="DataModel\Item.cs" />
     <Compile Include="OperationLog\OpLogManager.cs" />

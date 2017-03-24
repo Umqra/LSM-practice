@@ -6,6 +6,6 @@ namespace DataLayer.OperationLog.Operations
     {
         byte[] Serialize(IOperation operation);
 
-        IOperation Deserialize(Stream opLogStream);
+        IOperation Deserialize(Stream logStream);
     }
 }

@@ -1,20 +1,64 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace DataLayer.OperationLog.Operations
 {
-    //учесть что надо прыгать по определённому офсету в бинарно сериализованном файле
+    // учесть что надо прыгать по определённому офсету в бинарно сериализованном файле
     // ветки с решенными этапами локально держат
 
     public class OperationSerializer : IOperationSerializer
     {
+        private readonly Dictionary<Type, IOperationSerializer> serializerByOperationType =
+            new Dictionary<Type, IOperationSerializer>
+            {
+                [typeof(AddOperation)] = new AddOperationSerializer(),
+                [typeof(DeleteOperation)] = new DeleteOperationSerializer()
+            };
+        private readonly Dictionary<Type, int> operationHeader = new Dictionary<Type, int>
+        {
+            [typeof(AddOperation)] = 1,
+            [typeof(DeleteOperation)] = 2,
+        };
+
         public byte[] Serialize(IOperation operation)
         {
-            throw new System.NotImplementedException();
+            var type = operation.GetType();
+            if (!serializerByOperationType.ContainsKey(type))
+                throw new ArgumentException($"Unknown IOperation for serialization: {type}");
+            return GetOperationHeader(type)
+                .Concat(serializerByOperationType[type].Serialize(operation))
+                .ToArray();
         }
 
-        public IOperation Deserialize(Stream opLogStream)
+        private byte[] GetOperationHeader(Type type)
         {
-            throw new System.NotImplementedException();
+            return new[] {(byte)operationHeader[type]};
+        }
+
+        private IOperationSerializer GetSerializer(Stream logStream)
+        {
+            var header = logStream.ReadByte();
+            if (header == -1)
+                return null;
+            return GetSerializerByOperationHeader((byte)header);
+        }
+
+        private IOperationSerializer GetSerializerByOperationHeader(byte header)
+        {
+            foreach (var item in operationHeader)
+            {
+                if (item.Value == header)
+                    return serializerByOperationType[item.Key];
+            }
+            throw new ArgumentException($"Can't find suitable {nameof(IOperationSerializer)} for header {header}");
+        }
+
+        public IOperation Deserialize(Stream logStream)
+        {
+            var serializer = GetSerializer(logStream);
+            return serializer?.Deserialize(logStream);
         }
     }
 }
