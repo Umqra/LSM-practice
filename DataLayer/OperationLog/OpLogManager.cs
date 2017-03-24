@@ -7,7 +7,6 @@ namespace DataLayer.OperationLog
 {
     public class OpLogManager : IOpLogReader, IOpLogWriter, IDisposable
     {
-        private readonly IFile logFile;
         private readonly IOperationSerializer serializer;
         private readonly Lazy<Stream> readStream;
         private readonly Lazy<Stream> writeStream;
@@ -15,7 +14,6 @@ namespace DataLayer.OperationLog
 
         public OpLogManager(IFile logFile, IOperationSerializer serializer)
         {
-            this.logFile = logFile;
             this.serializer = serializer;
             readStream = new Lazy<Stream>(() => logFile.GetStream(FileAccess.Read));
             writeStream = new Lazy<Stream>(() => logFile.GetStream(FileAccess.Write));
@@ -23,8 +21,16 @@ namespace DataLayer.OperationLog
 
         public bool Read(out IOperation operation)
         {
-            operation = serializer.Deserialize(readStream.Value);
-            return operation != null;
+            try
+            {
+                operation = serializer.Deserialize(readStream.Value);
+                return operation != null;
+            }
+            catch (EndOfStreamException e)
+            {
+                operation = null;
+                return false;
+            }
         }
 
         public void Write(IOperation operation)

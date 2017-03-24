@@ -29,6 +29,7 @@ namespace DataLayerTests
                 System.IO.File.Delete(filePath);
         }
 
+
         [Test]
         public void Should_apply_operation_from_opLog()
         {

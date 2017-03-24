@@ -29,8 +29,8 @@ namespace DataLayer.OperationLog.Operations
             var reader = new BinaryReader(logStream);
             int keyLength = reader.ReadInt32();
             int valueLength = reader.ReadInt32();
-            var key = Encoding.UTF8.GetString(reader.ReadBytes(keyLength));
-            var value = Encoding.UTF8.GetString(reader.ReadBytes(valueLength));
+            var key = Encoding.UTF8.GetString(reader.ReadExactly(keyLength));
+            var value = Encoding.UTF8.GetString(reader.ReadExactly(valueLength));
             return new AddOperation(Item.CreateItem(key, value));
         }
     }

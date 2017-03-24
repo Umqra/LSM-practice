@@ -25,6 +25,13 @@
 
         public bool IsTombStone { get; }
 
+        public override string ToString()
+        {
+            if (IsTombStone)
+                return $"{nameof(Key)}: {Key}, deleted";
+            return $"{nameof(Key)}: {Key}, {nameof(Value)}: {Value}";
+        }
+
         #region EqualityMembers
         private bool Equals(Item other)
         {

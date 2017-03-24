@@ -5,6 +5,16 @@ using DataLayer.DataModel;
 
 namespace DataLayer.OperationLog.Operations
 {
+    public static class StreamExtensions
+    {
+        public static byte[] ReadExactly(this BinaryReader stream, int count)
+        {
+            byte[] bytes = stream.ReadBytes(count);
+            if (bytes.Length < count)
+                throw new EndOfStreamException();
+            return bytes;
+        }
+    }
     public class DeleteOperationSerializer : IOperationSerializer
     {
         public byte[] Serialize(IOperation operation)
@@ -25,7 +35,7 @@ namespace DataLayer.OperationLog.Operations
         {
             var reader = new BinaryReader(logStream);
             int keyLength = reader.ReadInt32();
-            var key = Encoding.UTF8.GetString(reader.ReadBytes(keyLength));
+            var key = Encoding.UTF8.GetString(reader.ReadExactly(keyLength));
             return new DeleteOperation(Item.CreateTombStone(key));
         }
     }

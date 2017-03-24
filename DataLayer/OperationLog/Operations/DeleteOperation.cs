@@ -10,7 +10,7 @@ namespace DataLayer.OperationLog.Operations
 {
     public class DeleteOperation : IOperation
     {
-        public Item Item { get; set; }
+        public Item Item { get; }
 
         public DeleteOperation(Item item)
         {
@@ -20,6 +20,29 @@ namespace DataLayer.OperationLog.Operations
         public void Apply(IMemTable memTable)
         {
             throw new NotImplementedException();
+        }
+
+        private bool Equals(DeleteOperation other)
+        {
+            return Equals(Item, other.Item);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((DeleteOperation)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Item?.GetHashCode() ?? 0;
+        }
+
+        public override string ToString()
+        {
+            return $"Delete: {Item}";
         }
     }
 }
