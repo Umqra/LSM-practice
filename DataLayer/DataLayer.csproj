@@ -61,6 +61,8 @@
     <Compile Include="OperationLog\OperationLogRepairer.cs" />
     <Compile Include="OperationLog\Operations\AddOperationSerializer.cs" />
     <Compile Include="OperationLog\Operations\DeleteOperationSerializer.cs" />
+    <Compile Include="OperationLog\Operations\DumpOperation.cs" />
+    <Compile Include="OperationLog\Operations\DumpOperationSerializer.cs" />
     <Compile Include="OperationLog\Operations\IOperationSerializer.cs" />
     <Compile Include="OperationLog\Operations\IOperation.cs" />
     <Compile Include="OperationLog\Operations\AddOperation.cs" />

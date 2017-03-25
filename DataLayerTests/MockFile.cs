@@ -13,7 +13,7 @@ namespace DataLayerTests
         {
             stream = new MemoryStream();
         }
-        public Stream GetStream(FileMode mode, FileAccess accessMode)
+        public Stream Open(FileMode mode, FileAccess accessMode)
         {
             ReinitializeStream(b => b);
             if (mode == FileMode.Append)

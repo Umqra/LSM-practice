@@ -1,21 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using DataLayer.DataModel;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
-using DataLayer.Utilities;
-using DataLayer.Warmup;
 
 namespace DataLayer.MemoryCopy
 {
     public class Cache : IDataStorage, IDisposable
     {
+        public int Size => memoryTable.Size;
         private readonly IOperationLogWriter logWriter;
         private readonly IDataStorage memoryTable;
 
-        private Cache(IOperationLogWriter logWriter, IDataStorage memoryTable)
+        public Cache(IOperationLogWriter logWriter, IDataStorage memoryTable)
         {
             this.logWriter = logWriter;
             this.memoryTable = memoryTable;
@@ -47,6 +44,11 @@ namespace DataLayer.MemoryCopy
         public void Dispose()
         {
             logWriter?.Dispose();
+        }
+
+        public void PrepareToDump()
+        {
+            logWriter.Write(new DumpOperation());
         }
     }
 }

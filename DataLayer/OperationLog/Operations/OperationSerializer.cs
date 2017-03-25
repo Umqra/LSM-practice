@@ -11,12 +11,14 @@ namespace DataLayer.OperationLog.Operations
             new Dictionary<Type, IOperationSerializer>
             {
                 [typeof(AddOperation)] = new AddOperationSerializer(),
-                [typeof(DeleteOperation)] = new DeleteOperationSerializer()
+                [typeof(DeleteOperation)] = new DeleteOperationSerializer(),
+                [typeof(DumpOperation)] = new DumpOperationSerializer(),
             };
         private readonly Dictionary<Type, int> operationHeader = new Dictionary<Type, int>
         {
             [typeof(AddOperation)] = 1,
             [typeof(DeleteOperation)] = 2,
+            [typeof(DumpOperation)] = 3,
         };
 
         public byte[] Serialize(IOperation operation)

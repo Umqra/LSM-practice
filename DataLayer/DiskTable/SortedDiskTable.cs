@@ -23,7 +23,7 @@ namespace DataLayer.SortedDiskTable
 
         private void AddItems(IEnumerable<Item> items)
         {
-            using (var stream = configuration.TableFile.GetStream(FileMode.OpenOrCreate, FileAccess.Write))
+            using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Write))
             using (var writer = new BinaryWriter(stream))
             {
                 foreach (var itemGroup in items.GroupBySize(configuration.IndexSpanSize))
@@ -47,7 +47,7 @@ namespace DataLayer.SortedDiskTable
                 return null;
             var predecessor = tableIndex.WeakPredecessor(key);
             var startOffset = predecessor.Value;
-            using (var stream = configuration.TableFile.GetStream(FileMode.OpenOrCreate, FileAccess.Read))
+            using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
             {
                 stream.Seek(startOffset, SeekOrigin.Begin);
                 while (stream.CanRead)

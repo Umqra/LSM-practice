@@ -24,12 +24,12 @@ namespace DataLayerTests
 
         private IOperationLogReader GetReader()
         {
-            return new OperationLogReader(file.GetStream(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer());
+            return new OperationLogReader(file.Open(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer());
         }
 
         private IOperationLogWriter GetWriter()
         {
-            return new OperationLogWriter(file.GetStream(FileMode.Append, FileAccess.Write), new OperationSerializer());
+            return new OperationLogWriter(file.Open(FileMode.Append, FileAccess.Write), new OperationSerializer());
         }
 
         private static TestCaseData[] singleOperationTests = {

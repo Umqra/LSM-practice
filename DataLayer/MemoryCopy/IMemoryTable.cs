@@ -17,5 +17,6 @@ namespace DataLayer.MemoryCopy
 
     public interface IDataStorage : IDataWriter, IDataReader
     {
+        int Size { get; }
     }
 }
