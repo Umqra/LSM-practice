@@ -5,7 +5,7 @@ using DataLayer.Utilities;
 
 namespace DataLayerTests
 {
-    public class MockFile : IFile
+    public class MockFile : IFileData
     {
         private MemoryStream stream;
 
@@ -36,5 +36,7 @@ namespace DataLayerTests
         {
             ReinitializeStream(b => b.Take(b.Length - brokenBytes).ToArray());
         }
+
+        public string Path { get; set; }
     }
 }

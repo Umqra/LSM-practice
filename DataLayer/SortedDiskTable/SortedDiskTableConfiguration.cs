@@ -5,7 +5,7 @@ namespace DataLayer.SortedDiskTable
 {
     public class SortedDiskTableConfiguration
     {
-        public IFile TableFile { get; set; }
+        public IFileData TableFile { get; set; }
         public int IndexSpanSize { get; set; }
         public IItemSerializer Serializer { get; set; }
     }

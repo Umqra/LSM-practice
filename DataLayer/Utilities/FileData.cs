@@ -2,17 +2,17 @@
 
 namespace DataLayer.Utilities
 {
-    public class File : IFile
+    public class FileData : IFileData
     {
         public string Path { get; set; }
-        public File(string path)
+        public FileData(string path)
         {
             Path = path;
         }
 
         public Stream GetStream(FileMode mode, FileAccess accessMode)
         {
-            return System.IO.File.Open(Path, mode, accessMode);
+            return File.Open(Path, mode, accessMode);
         }
     }
 }

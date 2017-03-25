@@ -17,7 +17,7 @@ namespace DataLayer.OperationLog.Operations
             Item = item;
         }
 
-        public void Apply(IMemoryTable memoryTable)
+        public void Apply(IDataWriter memoryTable)
         {
             memoryTable.Add(Item);
         }

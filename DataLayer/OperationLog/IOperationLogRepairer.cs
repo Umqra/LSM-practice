@@ -8,6 +8,6 @@ namespace DataLayer.OperationLog
         /// Repairs log after sudden shutdown
         /// </summary>
         /// <param name="logFile">File with operation logs</param>
-        void RepairLog(IFile logFile);
+        void RepairLog(IFileData logFile);
     }
 }

@@ -6,7 +6,7 @@ namespace DataLayer.OperationLog
 {
     public class OperationLogRepairer : IOperationLogRepairer
     {
-        public void RepairLog(IFile logFile)
+        public void RepairLog(IFileData logFile)
         {
             long validLength = 0;
             using (var fileReader = logFile.GetStream(FileMode.OpenOrCreate, FileAccess.Read))

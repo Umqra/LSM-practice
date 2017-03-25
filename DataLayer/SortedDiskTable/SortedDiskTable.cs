@@ -14,7 +14,7 @@ namespace DataLayer.SortedDiskTable
         private C5.KeyValuePair<string, long> MinKey => tableIndex.FindMin();
         private C5.KeyValuePair<string, long> MaxKey => tableIndex.FindMax();
 
-        public SortedDiskTable(SortedDiskTableConfiguration configuration, IMemoryTable memoryTable)
+        public SortedDiskTable(SortedDiskTableConfiguration configuration, IDataStorage memoryTable)
         {
             this.configuration = configuration;
             tableIndex = new TreeDictionary<string, long>();

@@ -19,7 +19,7 @@ namespace DataLayer.MemoryCopy
     {
         private CacheManagerConfiguration configuration;
         private Cache currentCache;
-        private IFile cacheLogFile;
+        private IFileData cacheLogFile;
         public CacheManager(CacheManagerConfiguration configuration)
         {
             this.configuration = configuration;
@@ -30,8 +30,8 @@ namespace DataLayer.MemoryCopy
         {
             foreach (var file in configuration.WorkingDirectory.GetFiles().Where(configuration.OperationLogFilter))
             {
-                var logFile = new File(file.FullName);
-                using (var reader = new OperationLogReader())
+                var logFile = new FileData(file.FullName);
+                
             }
         }
 

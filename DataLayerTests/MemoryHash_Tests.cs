@@ -17,7 +17,7 @@ namespace DataLayerTests
         public void SetUp()
         {
             filePath = Guid.NewGuid().ToString();
-            table = Cache.RestoreFromOperationLog(new File(filePath));
+            //table = Cache.RestoreFromOperationLog(new FileData(filePath));
         }
 
         [TearDown]
