@@ -4,6 +4,6 @@ namespace DataLayer.Warmup
 {
     public interface IOperationLogApplier
     {
-        void Apply(IMemoryTable memoryTable);
+        void Apply(IDataWriter memoryTable);
     }
 }

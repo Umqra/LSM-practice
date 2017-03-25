@@ -3,14 +3,19 @@ using DataLayer.DataModel;
 
 namespace DataLayer.MemoryCopy
 {
-    public interface IMemoryTable
+    public interface IDataReader
+    {
+        Item Get(string key);
+        IEnumerable<Item> GetAllItems();
+    }
+
+    public interface IDataWriter
     {
         void Add(Item item);
-
-        Item Get(string key);
-
         void Delete(string key);
+    }
 
-        IEnumerable<Item> GetAllItems();
+    public interface IDataStorage : IDataWriter, IDataReader
+    {
     }
 }

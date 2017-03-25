@@ -51,8 +51,9 @@
     <Compile Include="DataModel\ItemSerializer.cs" />
     <Compile Include="DiskTablesMerger.cs" />
     <Compile Include="MemoryCopy\IMemoryTable.cs" />
-    <Compile Include="MemoryCopy\MemoryTable.cs" />
-    <Compile Include="MemoryCopy\MemoryTableManager.cs" />
+    <Compile Include="MemoryCopy\DataStorage.cs" />
+    <Compile Include="MemoryCopy\Cache.cs" />
+    <Compile Include="MemoryCopy\MemoryCacheManager.cs" />
     <Compile Include="OperationLog\IOperationLogReader.cs" />
     <Compile Include="OperationLog\IOperationLogRepairer.cs" />
     <Compile Include="OperationLog\IOperationLogWriter.cs" />

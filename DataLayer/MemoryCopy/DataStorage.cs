@@ -4,13 +4,12 @@ using DataLayer.DataModel;
 
 namespace DataLayer.MemoryCopy
 {
-    public class MemoryTable : IMemoryTable
+    public class DataStorage : IDataStorage
     {
         private readonly ConcurrentDictionary<string, Item> memTable;
+        public int Count => memTable.Count;
 
-        public int Size => memTable.Count;
-
-        public MemoryTable()
+        public DataStorage()
         {
             memTable = new ConcurrentDictionary<string, Item>();
         }

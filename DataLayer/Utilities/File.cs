@@ -4,15 +4,15 @@ namespace DataLayer.Utilities
 {
     public class File : IFile
     {
-        private string path;
+        public string Path { get; set; }
         public File(string path)
         {
-            this.path = path;
+            Path = path;
         }
 
         public Stream GetStream(FileMode mode, FileAccess accessMode)
         {
-            return System.IO.File.Open(path, mode, accessMode);
+            return System.IO.File.Open(Path, mode, accessMode);
         }
     }
 }

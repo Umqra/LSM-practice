@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using DataLayer.DataModel;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
@@ -9,31 +10,17 @@ using DataLayer.Warmup;
 
 namespace DataLayer.MemoryCopy
 {
-    public class MemoryTableManager : IMemoryTable, IDisposable
+    public class Cache : IDataStorage, IDisposable
     {
         private readonly IOperationLogWriter logWriter;
-        private readonly IMemoryTable memoryTable;
+        private readonly IDataStorage memoryTable;
 
-        private MemoryTableManager(IOperationLogWriter logWriter, IMemoryTable memoryTable)
+        private Cache(IOperationLogWriter logWriter, IDataStorage memoryTable)
         {
             this.logWriter = logWriter;
             this.memoryTable = memoryTable;
         }
-
-        public static MemoryTableManager RestoreFromOperationLog(IFile logFile)
-        {
-            new OperationLogRepairer().RepairLog(logFile);
-            var memoryTable = new MemoryTable();
-            using (var reader = new OperationLogReader(
-                logFile.GetStream(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer()))
-            {
-                new OperationLogApplier(reader).Apply(memoryTable);
-            }
-            return new MemoryTableManager(
-                new OperationLogWriter(logFile.GetStream(FileMode.Append, FileAccess.Write), new OperationSerializer()),
-                memoryTable);
-        }
-
+        
         public void Add(Item item)
         {
             logWriter.Write(new AddOperation(item));

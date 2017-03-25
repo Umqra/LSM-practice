@@ -13,7 +13,7 @@ namespace DataLayer.Warmup
             this.logReader = logReader;
         }
 
-        public void Apply(IMemoryTable memoryTable)
+        public void Apply(IDataWriter memoryTable)
         {
             IOperation operation;
             while (logReader.Read(out operation))
