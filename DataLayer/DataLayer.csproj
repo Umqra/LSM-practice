@@ -50,6 +50,8 @@
     <Compile Include="Database.cs" />
     <Compile Include="DataModel\ItemSerializer.cs" />
     <Compile Include="DiskTablesMerger.cs" />
+    <Compile Include="DiskTable\DiskTableManager.cs" />
+    <Compile Include="DiskTable\IDiskTableManager.cs" />
     <Compile Include="MemoryCopy\CacheManager.cs" />
     <Compile Include="MemoryCopy\IMemoryTable.cs" />
     <Compile Include="MemoryCopy\DataStorage.cs" />
@@ -73,8 +75,8 @@
     <Compile Include="OperationLog\OperationLogWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="SortedDiskTable\SortedDiskTableConfiguration.cs" />
-    <Compile Include="SortedDiskTable\SortedDiskTable.cs" />
+    <Compile Include="DiskTable\DiskTableConfiguration.cs" />
+    <Compile Include="DiskTable\DiskTable.cs" />
     <Compile Include="Utilities\FileData.cs" />
     <Compile Include="Utilities\IFileData.cs" />
     <Compile Include="Warmup\IOperationLogApplier.cs" />

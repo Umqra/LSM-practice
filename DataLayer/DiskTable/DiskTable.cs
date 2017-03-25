@@ -1,32 +1,32 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using C5;
 using DataLayer.DataModel;
 using DataLayer.MemoryCopy;
 
-namespace DataLayer.SortedDiskTable
+namespace DataLayer.DiskTable
 {
-    public class SortedDiskTable
+    public class DiskTable
     {
-        private readonly SortedDiskTableConfiguration configuration;
+        private readonly DiskTableConfiguration configuration;
         private readonly TreeDictionary<string, long> tableIndex;
         private C5.KeyValuePair<string, long> MinKey => tableIndex.FindMin();
         private C5.KeyValuePair<string, long> MaxKey => tableIndex.FindMax();
 
-        public SortedDiskTable(SortedDiskTableConfiguration configuration, IDataStorage memoryTable)
+        public DiskTable(DiskTableConfiguration configuration, TreeDictionary<string, long> tableIndex)
         {
             this.configuration = configuration;
-            tableIndex = new TreeDictionary<string, long>();
-            AddItems(memoryTable.GetAllItems());
+            this.tableIndex = tableIndex;
         }
 
-        private void AddItems(IEnumerable<Item> items)
+        public static async Task<DiskTable> DumpCache(DiskTableConfiguration configuration, Cache cache)
         {
+            var tableIndex = new TreeDictionary<string, long>();
             using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Write))
-            using (var writer = new BinaryWriter(stream))
             {
-                foreach (var itemGroup in items.GroupBySize(configuration.IndexSpanSize))
+                foreach (var itemGroup in cache.GetAllItems().GroupBySize(configuration.IndexSpanSize))
                 {
                     var singleGroup = itemGroup.ToList();
                     var positionBeforeWrite = stream.Position;
@@ -34,11 +34,13 @@ namespace DataLayer.SortedDiskTable
                     foreach (var item in singleGroup)
                     {
                         positionBeforeWrite = stream.Position;
-                        writer.Write(configuration.Serializer.Serialize(item));
+                        var serialized = configuration.Serializer.Serialize(item);
+                        await stream.WriteAsync(serialized, 0, serialized.Length);
                     }
                     tableIndex[singleGroup.Last().Key] = positionBeforeWrite;
                 }
             }
+            return new DiskTable(configuration, tableIndex);
         }
 
         public Item Get(string key)

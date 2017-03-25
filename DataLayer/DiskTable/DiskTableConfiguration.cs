@@ -1,9 +1,9 @@
 ﻿using DataLayer.DataModel;
 using DataLayer.Utilities;
 
-namespace DataLayer.SortedDiskTable
+namespace DataLayer.DiskTable
 {
-    public class SortedDiskTableConfiguration
+    public class DiskTableConfiguration
     {
         public IFileData TableFile { get; set; }
         public int IndexSpanSize { get; set; }

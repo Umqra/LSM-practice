@@ -35,9 +35,12 @@ namespace DataLayer.MemoryCopy
         {
             get
             {
-                if (configuration.DumpCriteria.ShouldDump(currentCache))
-                    DumpCache();
-                return currentCache;
+                lock (cacheLogFile)
+                {
+                    if (configuration.DumpCriteria.ShouldDump(currentCache))
+                        DumpCache();
+                    return currentCache;
+                }
             }
             set { currentCache = value; }
         }
