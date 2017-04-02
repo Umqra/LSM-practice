@@ -181,7 +181,7 @@ namespace DataLayer.DiskTable
             {
                 IndexSpanSize =  DefaultIndexSpanSize,
                 Serializer = new ItemSerializer(),
-                TableFile = new FileData(path)
+                TableFile = new FileInfo(path)
             };
         }
 

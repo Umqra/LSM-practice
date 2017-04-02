@@ -1,4 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using DataLayer.DataModel;
 using DataLayer.MemoryCache;
@@ -12,16 +16,26 @@ namespace DataLayerTests
     [TestFixture]
     class OperationLogTests
     {
-        private MockFile file;
-        private IOperationLogWriter writer;
+        private FileInfoBase file;
         private IOperationLogRepairer repairer;
         private CacheManager cacheManager;
         [SetUp]
         public void Setup()
         {
-            file = new MockFile();
-            writer = GetWriter();
+            var filePath = @"c:\log.txt";
+            var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
+            {
+                [filePath] = new MockFileData("")
+            });
+            file = new MockFileInfo(fileSystem, filePath);
             repairer = new OperationLogRepairer();
+        }
+
+        private void CorruptFile(FileInfoBase fileToCorrupt, int brokenBytes = 2)
+        {
+            var length = fileToCorrupt.Length;
+            using (var stream = fileToCorrupt.OpenWrite())
+                stream.SetLength(length - brokenBytes);
         }
 
         private IOperationLogReader GetReader()
@@ -43,7 +57,9 @@ namespace DataLayerTests
         [TestCaseSource(nameof(singleOperationTests))]
         public void TestSingleOperation(IOperation operation)
         {
-            writer.Write(operation);
+            using (var writer = GetWriter())
+                writer.Write(operation);
+
             using (var reader = GetReader())
             {
                 IOperation result;
@@ -67,8 +83,10 @@ namespace DataLayerTests
         [TestCaseSource(nameof(manyOperationTests))]
         public void TestManyOperations(params IOperation[] operations)
         {
-            foreach (var operation in operations)
-                writer.Write(operation);
+            using (var writer = GetWriter())
+                foreach (var operation in operations)
+                    writer.Write(operation);
+
             using (var reader = GetReader())
             {
                 IOperation result;
@@ -84,10 +102,11 @@ namespace DataLayerTests
         [TestCaseSource(nameof(manyOperationTests))]
         public void TestManyOperations_Corrupted(params IOperation[] operations)
         {
-            foreach (var operation in operations)
-                writer.Write(operation);
+            using (var writer = GetWriter())
+                foreach (var operation in operations)
+                    writer.Write(operation);
 
-            file.CorruptSuffix();
+            CorruptFile(file);
             repairer.RepairLog(file);
 
             using (var restoredReader = GetReader())
@@ -105,10 +124,11 @@ namespace DataLayerTests
         [TestCaseSource(nameof(manyOperationTests))]
         public void TestManyOperations_Corrupted_ThenContinue(params IOperation[] operations)
         {
-            foreach (var operation in operations)
-                writer.Write(operation);
+            using (var writer = GetWriter())
+                foreach (var operation in operations)
+                    writer.Write(operation);
 
-            file.CorruptSuffix();
+            CorruptFile(file);
             repairer.RepairLog(file);
 
             var newOperation = new AddOperation(Item.CreateItem("11", "22"));

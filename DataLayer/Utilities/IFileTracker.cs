@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.IO.Abstractions;
 
 namespace DataLayer.Utilities
 {
     public interface IFileTracker
     {
-        IEnumerable<FileData> Files { get; }
-        FileData CreateNewFile();
+        IEnumerable<FileInfoBase> Files { get; }
+        FileInfoBase CreateNewFile();
     }
 }

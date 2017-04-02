@@ -1,4 +1,5 @@
-﻿using DataLayer.Utilities;
+﻿using System.IO.Abstractions;
+using DataLayer.Utilities;
 
 namespace DataLayer.OperationLog
 {
@@ -8,6 +9,6 @@ namespace DataLayer.OperationLog
         /// Repairs log after sudden shutdown
         /// </summary>
         /// <param name="logFile">File with operation logs</param>
-        void RepairLog(IFileData logFile);
+        void RepairLog(FileInfoBase logFile);
     }
 }

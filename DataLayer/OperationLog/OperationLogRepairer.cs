@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Abstractions;
 using DataLayer.OperationLog.Operations;
 using DataLayer.Utilities;
 
@@ -6,7 +7,7 @@ namespace DataLayer.OperationLog
 {
     public class OperationLogRepairer : IOperationLogRepairer
     {
-        public void RepairLog(IFileData logFile)
+        public void RepairLog(FileInfoBase logFile)
         {
             long validLength = 0;
             using (var fileReader = logFile.Open(FileMode.OpenOrCreate, FileAccess.Read))

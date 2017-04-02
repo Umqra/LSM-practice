@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using DataLayer.DataModel;
@@ -34,7 +35,7 @@ namespace DataLayer.MemoryCache
     public class CacheManager : IDataStorage, IDisposable
     {
         private readonly CacheManagerConfiguration configuration;
-        private readonly IFileData cacheLogFile;
+        private readonly FileInfoBase cacheLogFile;
         private Cache currentCache;
 
         private Cache CurrentCache
@@ -54,7 +55,7 @@ namespace DataLayer.MemoryCache
         {
             currentCache.PrepareToDump();
             currentCache.Dispose();
-            configuration.DiskTableManager.DumpCache(currentCache, () => File.Delete(cacheLogFile.Path));
+            configuration.DiskTableManager.DumpCache(currentCache, () => cacheLogFile.Delete());
             currentCache = InitializeCacheWithLog(configuration.OperationLogsTracker.CreateNewFile());
         }
 
@@ -92,7 +93,7 @@ namespace DataLayer.MemoryCache
             CurrentCache?.Dispose();
         }
 
-        private Cache InitializeCacheWithLog(IFileData logFile)
+        private Cache InitializeCacheWithLog(FileInfoBase logFile)
         {
             var cacheLogWriter = new OperationLogWriter(
                 logFile.Open(FileMode.Append, FileAccess.Write),
@@ -100,9 +101,9 @@ namespace DataLayer.MemoryCache
             return new Cache(cacheLogWriter, new DataStorage());
         }
 
-        private IFileData GetValidCache()
+        private FileInfoBase GetValidCache()
         {
-            var candidateForRestore = new List<FileData>();
+            var candidateForRestore = new List<FileInfoBase>();
             foreach (var logFile in configuration.OperationLogsTracker.Files)
             {
                 //TODO: read EACH log file TWICE!
@@ -117,7 +118,7 @@ namespace DataLayer.MemoryCache
             return candidateForRestore.First();
         }
 
-        private IEnumerable<IOperation> ReadOperationLog(IFileData logFile)
+        private IEnumerable<IOperation> ReadOperationLog(FileInfoBase logFile)
         {
             configuration.Repairer.RepairLog(logFile);
             using (var reader = new OperationLogReader(
