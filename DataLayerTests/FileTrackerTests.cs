@@ -14,11 +14,11 @@ namespace DataLayerTests
     [TestFixture]
     class FileTrackerTests
     {
-        public DirectoryInfoBase CreateDirectory(params string[] files)
+        public DirectoryInfoBase CreateDirectory(string path, params string[] files)
         {
             var filesDictionary = files.ToDictionary(file => file, file => new MockFileData(""));
             var fileSystem = new MockFileSystem(filesDictionary);
-            return new MockDirectoryInfo(fileSystem, ".");
+            return new MockDirectoryInfo(fileSystem, path);
         }
 
         [TestCase("log-1.txt")]
@@ -26,7 +26,7 @@ namespace DataLayerTests
         [TestCase("{0}-{0}.txt")]
         public void TestIncorrectFormatString(string format)
         {
-            Action trackerFactory = () => new FileTracker(format, CreateDirectory());
+            Action trackerFactory = () => new FileTracker(format, CreateDirectory("."));
             trackerFactory.ShouldThrow<ArgumentException>();
         }
 
@@ -35,13 +35,17 @@ namespace DataLayerTests
         [TestCase("very-long-and-complex-name-v1.2-{0}.tar.gz")]
         public void TestCorrectFormatString(string format)
         {
-            new FileTracker(format, CreateDirectory());
+            new FileTracker(format, CreateDirectory("."));
         }
 
         [Test]
         public void TestFileEnumeration()
         {
-            var directory = CreateDirectory("log-1.txt", "log-3.txt", "readme.txt", "log-0.old");
+            var directory = CreateDirectory(@"c:\path",
+                @"c:\path\log-1.txt",
+                @"c:\path\log-3.txt",
+                @"c:\path\readme.txt",
+                @"c:\path\log-0.old");
             var fileTracker = new FileTracker("log-{0}.txt", directory);
             fileTracker.Files.Select(f => f.Name).Should().BeEquivalentTo("log-1.txt", "log-3.txt");
         }
@@ -49,7 +53,11 @@ namespace DataLayerTests
         [Test]
         public void TestNewFileCreation()
         {
-            var directory = CreateDirectory("log-1.txt", "log-3.txt", "readme.txt", "log-0.old");
+            var directory = CreateDirectory(@"c:\path",
+                @"c:\path\log-1.txt", 
+                @"c:\path\log-3.txt", 
+                @"c:\path\readme.txt",
+                @"c:\path\log-0.old");
             var fileTracker = new FileTracker("log-{0}.txt", directory);
             fileTracker.CreateNewFile().Name.Should().Be("log-4.txt");
         }

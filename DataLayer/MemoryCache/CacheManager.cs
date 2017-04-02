@@ -34,7 +34,7 @@ namespace DataLayer.MemoryCache
 
     public class CacheManager : IDataStorage, IDisposable
     {
-        private readonly CacheManagerConfiguration configuration;
+        private readonly ICacheManagerConfiguration configuration;
         private readonly FileInfoBase cacheLogFile;
         private Cache currentCache;
 
@@ -61,7 +61,7 @@ namespace DataLayer.MemoryCache
 
         public int Size => CurrentCache?.Size ?? 0;
 
-        public CacheManager(CacheManagerConfiguration configuration)
+        public CacheManager(ICacheManagerConfiguration configuration)
         {
             this.configuration = configuration;
             cacheLogFile = GetValidCache();
