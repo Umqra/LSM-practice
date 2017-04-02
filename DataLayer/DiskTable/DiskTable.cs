@@ -23,10 +23,15 @@ namespace DataLayer.DiskTable
 
         public static async Task<DiskTable> DumpCache(DiskTableConfiguration configuration, Cache cache)
         {
+            return await DumpItems(configuration, cache.GetAllItems());
+        }
+
+        public static async Task<DiskTable> DumpItems(DiskTableConfiguration configuration, IEnumerable<Item> items)
+        {
             var tableIndex = new TreeDictionary<string, long>();
             using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Write))
             {
-                foreach (var itemGroup in cache.GetAllItems().GroupBySize(configuration.IndexSpanSize))
+                foreach (var itemGroup in items.GroupBySize(configuration.IndexSpanSize))
                 {
                     var singleGroup = itemGroup.ToList();
                     var positionBeforeWrite = stream.Position;
@@ -74,6 +79,11 @@ namespace DataLayer.DiskTable
                     yield return item;
                 }
             }
+        }
+
+        public void Delete()
+        {
+            configuration.TableFile.Delete();
         }
     }
 }

@@ -12,10 +12,13 @@ using DataLayer.Utilities;
 
 namespace DataLayer.DiskTable
 {
-    public class DiskTableManagerConfiguraiton
+    public interface IDiskTableManagerConfiguration
     {
-        public DirectoryInfo WorkingDirectory { get; set; }
-        public Func<string> UniqueNameGenerator { get; set; }
+        IFileTracker DiskTablesTracker { get; }
+    }
+    public class DiskTableManagerConfiguraiton : IDiskTableManagerConfiguration
+    {
+        public IFileTracker DiskTablesTracker { get; }
     }
 
     public class QueueEntry<T>
@@ -32,11 +35,13 @@ namespace DataLayer.DiskTable
 
     public class DiskTablesQueue : IEnumerable<DiskTable>
     {
-        private readonly object poolLock = new object();
+        private readonly DiskTableManager diskTableManager;
         private readonly SynchronizedCollection<QueueEntry<DiskTable>> diskTables;
 
-        public DiskTablesQueue()
+        //TODO: pass IDiskTableMerger instead of DiskTableManager?
+        public DiskTablesQueue(DiskTableManager diskTableManager)
         {
+            this.diskTableManager = diskTableManager;
             diskTables = new SynchronizedCollection<QueueEntry<DiskTable>>();
         }
 
@@ -46,40 +51,41 @@ namespace DataLayer.DiskTable
             diskTables.Insert(0, new QueueEntry<DiskTable>(table));
         }
 
-        public void Pop()
+        public void Remove(DiskTable diskTable)
         {
-            lock (poolLock)
-                diskTables.RemoveAt(diskTables.Count - 1);
+            //TODO: very SLOW remove!
+            lock (diskTables)
+            {
+                var target = diskTables.FirstOrDefault(table => table.Value.Equals(diskTable));
+                if (target == null)
+                    return;
+                diskTables.Remove(target);
+            }
         }
 
-        private int GetLastNotMergedId()
+        private IEnumerable<QueueEntry<DiskTable>> GetRecentNotMerged()
         {
             lock (diskTables)
             {
                 for (int i = diskTables.Count - 1; i >= 0; i--)
                     if (!diskTables[i].StartMerging)
-                        return i;
-                return -1;
+                        yield return diskTables[i];
             }
         }
 
-        public DiskTable TryMerge()
+        public async Task<DiskTablesMergeInfo> TryMerge()
         {
-            QueueEntry<DiskTable> firstTable, secondTable;
+            QueueEntry<DiskTable>[] parents;
             lock (diskTables)
             {
-                var notMerged = GetLastNotMergedId();
-                if (notMerged <= 0)
+                parents = GetRecentNotMerged().Take(2).ToArray();
+                if (parents.Length < 2)
                     return null;
-                diskTables[notMerged].StartMerging = diskTables[notMerged - 1].StartMerging = true;
-                firstTable = diskTables[notMerged];
-                secondTable = diskTables[notMerged - 1];
+                parents[0].StartMerging = parents[1].StartMerging = true;
             }
-            throw new NotImplementedException();
-            //var merged = DiskTableManager.MergeDiskTables(firstTable.Value, secondTable.Value);
-            //diskTables.Remove(firstTable);
-            //diskTables.Remove(secondTable);
-            //return merged;
+            
+            var merged = await diskTableManager.MergeDiskTables(parents[0].Value, parents[1].Value);
+            return new DiskTablesMergeInfo(merged, parents.Select(parent => parent.Value));
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -98,22 +104,35 @@ namespace DataLayer.DiskTable
             return tables.GetEnumerator();
         }
     }
+
+    public class DiskTablesMergeInfo
+    {
+        public  readonly DiskTable Merged;
+        public readonly List<DiskTable> Parents;
+
+        public DiskTablesMergeInfo(DiskTable merged, IEnumerable<DiskTable> parents)
+        {
+            Merged = merged;
+            Parents = parents.ToList();
+        }
+    }
+
     public class DiskTableManager : IDiskTableManager
     {
         private readonly DiskTableManagerConfiguraiton configuration;
         private const int DefaultIndexSpanSize = 100;
         private readonly SynchronizedCollection<DiskTablesQueue> diskTableLevels;
-        private readonly SynchronizedCollection<Cache> pendingCaches;
+        private readonly SynchronizedCollection<Cache> dumpingCachesQueue;
 
         public DiskTableManager(DiskTableManagerConfiguraiton configuration)
         {
             this.configuration = configuration;
             diskTableLevels = new SynchronizedCollection<DiskTablesQueue>();
-            pendingCaches = new SynchronizedCollection<Cache>();
+            dumpingCachesQueue = new SynchronizedCollection<Cache>();
         }
         public Item Get(string key)
         {
-            foreach (var cache in pendingCaches)
+            foreach (var cache in dumpingCachesQueue)
             {
                 var cacheValue = cache.Get(key);
                 if (cacheValue != null)
@@ -141,7 +160,7 @@ namespace DataLayer.DiskTable
             lock (diskTableLevels)
             {
                 while (diskTableLevels.Count <= level)
-                    diskTableLevels.Add(new DiskTablesQueue());
+                    diskTableLevels.Add(new DiskTablesQueue(this));
             }
             diskTableLevels[level].Push(diskTable);
             FixLevels();
@@ -153,10 +172,16 @@ namespace DataLayer.DiskTable
             for (var i = 0; i < count; i++)
             {
                 var level = i;
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
-                    var merged = diskTableLevels[level].TryMerge();
-                    AddDiskTable(merged, level + 1);
+                    var mergeResult = await diskTableLevels[level].TryMerge();
+                    //TODO: specific merge result instead of null for this case
+                    if (mergeResult == null) return;
+                    AddDiskTable(mergeResult.Merged, level + 1);
+
+                    //TODO: parent can handle query right now(from concurrent thread) and we may interrupt it
+                    foreach (var parent in mergeResult.Parents)
+                        diskTableLevels[level].Remove(parent);
                 });
             }
         }
@@ -164,31 +189,31 @@ namespace DataLayer.DiskTable
         public void DumpCache(Cache cache, Action cleanupAction)
         {
             var diskTableConfig = CreateDiskTableConfiguration();
-            pendingCaches.Add(cache);
+            dumpingCachesQueue.Add(cache);
             Task.Run(async () => await DiskTable.DumpCache(diskTableConfig, cache)).ContinueWith(t =>
             {
                 AddDiskTable(t.Result, 0);
                 //TODO: removing by reference is TOO slow
-                pendingCaches.Remove(cache);
+                dumpingCachesQueue.Remove(cache);
                 cleanupAction();
             });
         }
 
         private DiskTableConfiguration CreateDiskTableConfiguration()
         {
-            var path = Path.Combine(configuration.WorkingDirectory.FullName, configuration.UniqueNameGenerator());
+            var file = configuration.DiskTablesTracker.CreateNewFile();
             return new DiskTableConfiguration
             {
                 IndexSpanSize =  DefaultIndexSpanSize,
                 Serializer = new ItemSerializer(),
-                TableFile = new FileInfo(path)
+                TableFile = file,
             };
         }
 
-        public DiskTable MergeDiskTables(DiskTable first, DiskTable second)
+        public async Task<DiskTable> MergeDiskTables(DiskTable first, DiskTable second)
         {
-            var configuration = CreateDiskTableConfiguration();
-            throw new NotImplementedException();    
+            var mergedConfiguration = CreateDiskTableConfiguration();
+            return await DiskTable.DumpItems(mergedConfiguration, first.GetAllItems().MergeWith(second.GetAllItems()));
         }
     }
 }

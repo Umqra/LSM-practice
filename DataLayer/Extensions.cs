@@ -14,11 +14,20 @@ namespace DataLayer
         }
 
         public static IEnumerable<T> MergeWith<T>(this IEnumerable<T> first, IEnumerable<T> second)
+            where T:IComparable<T>
         {
-            using (var firstEnumerator = first.GetEnumerator())
-            using (var secondEnumerator = second.GetEnumerator())
+            using (var enumerator = first.GetEnumerator())
             {
-                throw new NotImplementedException();        
+                bool firstContinue = enumerator.MoveNext();
+                foreach (var secondItem in second)
+                {
+                    while (firstContinue && enumerator.Current.CompareTo(secondItem) <= 0)
+                    {
+                        yield return enumerator.Current;
+                        firstContinue &= enumerator.MoveNext();
+                    }
+                    yield return secondItem;
+                }
             }
         }
 

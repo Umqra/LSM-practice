@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DataLayer.DataModel
 {
-    public class Item
+    public class Item : IComparable<Item>
     {
         public static Item CreateItem(string key, string value)
         {
@@ -39,29 +39,29 @@ namespace DataLayer.DataModel
         #region EqualityMembers
         private bool Equals(Item other)
         {
-            return string.Equals(Key, other.Key)
-                && string.Equals(Value, other.Value)
-                && IsTombStone == other.IsTombStone;
+            return string.Equals(Key, other.Key);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((Item)obj);
         }
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hashCode = Key?.GetHashCode() ?? 0;
-                hashCode = (hashCode * 397) ^ (Value?.GetHashCode() ?? 0);
-                hashCode = (hashCode * 397) ^ IsTombStone.GetHashCode();
-                return hashCode;
-            }
+            return Key?.GetHashCode() ?? 0;
         }
+
+        public int CompareTo(Item other)
+        {
+            if (ReferenceEquals(this, other)) return 0;
+            if (ReferenceEquals(null, other)) return 1;
+            return string.Compare(Key, other.Key, StringComparison.Ordinal);
+        }
+
         #endregion
     }
 }
