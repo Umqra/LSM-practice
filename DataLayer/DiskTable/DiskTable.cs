@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,26 +12,29 @@ namespace DataLayer.DiskTable
     public class DiskTable : IDataReader
     {
         private readonly DiskTableConfiguration configuration;
+        public int Level { get; }
         private readonly TreeDictionary<string, long> tableIndex;
         private C5.KeyValuePair<string, long> MinKey => tableIndex.FindMin();
         private C5.KeyValuePair<string, long> MaxKey => tableIndex.FindMax();
 
-        public DiskTable(DiskTableConfiguration configuration, TreeDictionary<string, long> tableIndex)
+        public DiskTable(DiskTableConfiguration configuration, int level, TreeDictionary<string, long> tableIndex)
         {
             this.configuration = configuration;
+            Level = level;
             this.tableIndex = tableIndex;
         }
 
         public static async Task<DiskTable> DumpCache(DiskTableConfiguration configuration, Cache cache)
         {
-            return await DumpItems(configuration, cache.GetAllItems());
+            return await DumpItems(configuration, 0, cache.GetAllItems());
         }
 
-        public static async Task<DiskTable> DumpItems(DiskTableConfiguration configuration, IEnumerable<Item> items)
+        public static async Task<DiskTable> DumpItems(DiskTableConfiguration configuration, int level, IEnumerable<Item> items)
         {
             var tableIndex = new TreeDictionary<string, long>();
             using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Write))
             {
+                await stream.WriteAsync(BitConverter.GetBytes(level), 0, 4);
                 foreach (var itemGroup in items.GroupBySize(configuration.IndexSpanSize))
                 {
                     var singleGroup = itemGroup.ToList();
@@ -45,7 +49,7 @@ namespace DataLayer.DiskTable
                     tableIndex[singleGroup.Last().Key] = positionBeforeWrite;
                 }
             }
-            return new DiskTable(configuration, tableIndex);
+            return new DiskTable(configuration, level, tableIndex);
         }
 
         public Item Get(string key)

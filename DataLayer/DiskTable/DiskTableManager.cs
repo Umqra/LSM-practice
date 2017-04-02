@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using C5;
 using DataLayer.DataModel;
 using DataLayer.MemoryCache;
 using DataLayer.Utilities;
@@ -18,7 +19,7 @@ namespace DataLayer.DiskTable
     }
     public class DiskTableManagerConfiguraiton : IDiskTableManagerConfiguration
     {
-        public IFileTracker DiskTablesTracker { get; }
+        public IFileTracker DiskTablesTracker { get; set; }
     }
 
     public class QueueEntry<T>
@@ -129,7 +130,21 @@ namespace DataLayer.DiskTable
             this.configuration = configuration;
             diskTableLevels = new SynchronizedCollection<DiskTablesQueue>();
             dumpingCachesQueue = new SynchronizedCollection<Cache>();
+            InitializeDiskTables();
         }
+
+        private void InitializeDiskTables()
+        {
+            foreach (var diskTableFile in configuration.DiskTablesTracker.Files)
+            {
+                int diskTableLevel;
+                using (var stream = diskTableFile.OpenRead())
+                using (var binaryReader = new BinaryReader(stream))
+                    diskTableLevel = binaryReader.ReadInt32();
+                //TODO: create new disk table
+            }
+        }
+
         public Item Get(string key)
         {
             foreach (var cache in dumpingCachesQueue)
@@ -213,7 +228,7 @@ namespace DataLayer.DiskTable
         public async Task<DiskTable> MergeDiskTables(DiskTable first, DiskTable second)
         {
             var mergedConfiguration = CreateDiskTableConfiguration();
-            return await DiskTable.DumpItems(mergedConfiguration, first.GetAllItems().MergeWith(second.GetAllItems()));
+            return await DiskTable.DumpItems(mergedConfiguration, first.Level + second.Level, first.GetAllItems().MergeWith(second.GetAllItems()));
         }
     }
 }

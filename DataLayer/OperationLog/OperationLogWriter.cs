@@ -19,7 +19,10 @@ namespace DataLayer.OperationLog
         {
             var serialized = serializer.Serialize(operation);
             lock (logStream)
+            {
                 logStream.Write(serialized, 0, serialized.Length);
+                logStream.Flush();
+            }
         }
 
         public void Dispose()

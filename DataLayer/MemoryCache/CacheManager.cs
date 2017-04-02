@@ -72,10 +72,18 @@ namespace DataLayer.MemoryCache
 
         private Cache InitializeCacheWithLog(FileInfoBase logFile)
         {
+            var dataStorage = new DataStorage();
+            using (var reader = new OperationLogReader(logFile.Open(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer()))
+            {
+                IOperation operation;
+                while (reader.Read(out operation))
+                    operation.Apply(dataStorage);
+            }
+
             var cacheLogWriter = new OperationLogWriter(
                 logFile.Open(FileMode.Append, FileAccess.Write),
                 new OperationSerializer());
-            return new Cache(cacheLogWriter, new DataStorage());
+            return new Cache(cacheLogWriter, dataStorage);
         }
 
         private FileInfoBase GetValidCache()

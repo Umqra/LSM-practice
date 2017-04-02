@@ -36,7 +36,7 @@ namespace DataLayer.Utilities
             .Where(f => parsingRegex.IsMatch(f.Name));
         public FileInfoBase CreateNewFile()
         {
-            var maxId = int.MinValue;
+            var maxId = 0;
             foreach (var file in Files)
             {
                 var match = parsingRegex.Match(file.Name);
