@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FakeItEasy, Version=2.3.1.0, Culture=neutral, PublicKeyToken=eff28e2146d5fd2c, processorArchitecture=MSIL">
+      <HintPath>..\packages\FakeItEasy.2.3.1\lib\net40\FakeItEasy.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="FluentAssertions, Version=4.5.0.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
       <HintPath>..\packages\FluentAssertions.4.5.0\lib\net45\FluentAssertions.dll</HintPath>
       <Private>True</Private>
@@ -56,10 +60,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MemoryCache_Tests.cs" />
+    <Compile Include="MemoryCacheTests.cs" />
     <Compile Include="MockFile.cs" />
-    <Compile Include="OperationLogTests_part1.cs" />
-    <Compile Include="OperationLog_Test.cs" />
+    <Compile Include="OperationLogTests.cs" />
     <Compile Include="ParamsTestCaseData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using DataLayer.DataModel;
+using DataLayer.MemoryCache;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
 using FluentAssertions;
@@ -14,6 +15,7 @@ namespace DataLayerTests
         private MockFile file;
         private IOperationLogWriter writer;
         private IOperationLogRepairer repairer;
+        private CacheManager cacheManager;
         [SetUp]
         public void Setup()
         {
@@ -111,9 +113,8 @@ namespace DataLayerTests
 
             var newOperation = new AddOperation(Item.CreateItem("11", "22"));
             using (var restoredWriter = GetWriter())
-            { 
                 restoredWriter.Write(newOperation);
-            }
+
             using (var restoredReader = GetReader())
             {
                 foreach (var operation in operations.Take(operations.Length - 1).Concat(new[] { newOperation }))

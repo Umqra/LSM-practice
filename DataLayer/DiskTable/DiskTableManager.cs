@@ -75,10 +75,11 @@ namespace DataLayer.DiskTable
                 firstTable = diskTables[notMerged];
                 secondTable = diskTables[notMerged - 1];
             }
-            var merged = DiskTableManager.MergeDiskTables(firstTable.Value, secondTable.Value);
-            diskTables.Remove(firstTable);
-            diskTables.Remove(secondTable);
-            return merged;
+            throw new NotImplementedException();
+            //var merged = DiskTableManager.MergeDiskTables(firstTable.Value, secondTable.Value);
+            //diskTables.Remove(firstTable);
+            //diskTables.Remove(secondTable);
+            //return merged;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -187,7 +188,7 @@ namespace DataLayer.DiskTable
         public DiskTable MergeDiskTables(DiskTable first, DiskTable second)
         {
             var configuration = CreateDiskTableConfiguration();
-            
+            throw new NotImplementedException();    
         }
     }
 }

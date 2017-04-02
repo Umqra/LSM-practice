@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using DataLayer.DataModel;
 using DataLayer.DiskTable;
 using DataLayer.OperationLog;
@@ -10,12 +11,17 @@ using DataLayer.Utilities;
 
 namespace DataLayer.MemoryCache
 {
-    public class CacheManagerConfiguration
+    public interface ICacheManagerConfiguration
     {
-        public DirectoryInfo WorkingDirectory { get; set; }
-        public Func<FileInfo, bool> OperationLogFilter { get; set; }
+        IFileTracker OperationLogsTracker { get; }
+        IOperationLogRepairer Repairer { get; }
+        IDumpCriteria DumpCriteria { get; }
+        IDiskTableManager DiskTableManager { get; }
+    }
+    public class CacheManagerConfiguration : ICacheManagerConfiguration
+    {
+        public IFileTracker OperationLogsTracker { get; }
         public IOperationLogRepairer Repairer { get; set; }
-        public Func<string> UniqueNameGenerator { get; set; }
         public IDumpCriteria DumpCriteria { get; set; }
         public IDiskTableManager DiskTableManager { get; set; }
     }
@@ -42,7 +48,6 @@ namespace DataLayer.MemoryCache
                     return currentCache;
                 }
             }
-            set { currentCache = value; }
         }
 
         private void DumpCache()
@@ -50,7 +55,7 @@ namespace DataLayer.MemoryCache
             currentCache.PrepareToDump();
             currentCache.Dispose();
             configuration.DiskTableManager.DumpCache(currentCache, () => File.Delete(cacheLogFile.Path));
-            currentCache = InitializeCacheWithLog(CreateNewLogFile());
+            currentCache = InitializeCacheWithLog(configuration.OperationLogsTracker.CreateNewFile());
         }
 
         public int Size => CurrentCache?.Size ?? 0;
@@ -59,7 +64,7 @@ namespace DataLayer.MemoryCache
         {
             this.configuration = configuration;
             cacheLogFile = GetValidCache();
-            CurrentCache = InitializeCacheWithLog(cacheLogFile);
+            currentCache = InitializeCacheWithLog(cacheLogFile);
         }
 
         public void Add(Item item)
@@ -87,12 +92,6 @@ namespace DataLayer.MemoryCache
             CurrentCache?.Dispose();
         }
 
-        private FileData CreateNewLogFile()
-        {
-            var filename = configuration.UniqueNameGenerator();
-            return new FileData(Path.Combine(configuration.WorkingDirectory.FullName, filename));
-        }
-
         private Cache InitializeCacheWithLog(IFileData logFile)
         {
             var cacheLogWriter = new OperationLogWriter(
@@ -104,9 +103,8 @@ namespace DataLayer.MemoryCache
         private IFileData GetValidCache()
         {
             var candidateForRestore = new List<FileData>();
-            foreach (var file in configuration.WorkingDirectory.GetFiles().Where(configuration.OperationLogFilter))
+            foreach (var logFile in configuration.OperationLogsTracker.Files)
             {
-                var logFile = new FileData(file.FullName);
                 //TODO: read EACH log file TWICE!
                 var operation = ReadOperationLog(logFile).ToList();
                 if (operation.Last() is DumpOperation)
@@ -114,7 +112,7 @@ namespace DataLayer.MemoryCache
                 candidateForRestore.Add(logFile);
             }
             if (candidateForRestore.Count == 0)
-                return CreateNewLogFile();
+                return configuration.OperationLogsTracker.CreateNewFile();
             //TODO: Notification if more than one candidate
             return candidateForRestore.First();
         }

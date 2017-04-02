@@ -18,7 +18,7 @@ namespace DataLayer
             using (var firstEnumerator = first.GetEnumerator())
             using (var secondEnumerator = second.GetEnumerator())
             {
-                
+                throw new NotImplementedException();        
             }
         }
 
