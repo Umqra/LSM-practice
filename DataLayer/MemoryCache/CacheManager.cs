@@ -5,33 +5,11 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using DataLayer.DataModel;
-using DataLayer.DiskTable;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
-using DataLayer.Utilities;
 
 namespace DataLayer.MemoryCache
 {
-    public interface ICacheManagerConfiguration
-    {
-        IFileTracker OperationLogsTracker { get; }
-        IOperationLogRepairer Repairer { get; }
-        IDumpCriteria DumpCriteria { get; }
-        IDiskTableManager DiskTableManager { get; }
-    }
-    public class CacheManagerConfiguration : ICacheManagerConfiguration
-    {
-        public IFileTracker OperationLogsTracker { get; }
-        public IOperationLogRepairer Repairer { get; set; }
-        public IDumpCriteria DumpCriteria { get; set; }
-        public IDiskTableManager DiskTableManager { get; set; }
-    }
-
-    public interface IDumpCriteria
-    {
-        bool ShouldDump(Cache cache);
-    }
-
     public class CacheManager : IDataStorage, IDisposable
     {
         private readonly ICacheManagerConfiguration configuration;

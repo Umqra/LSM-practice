@@ -60,6 +60,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MemoryCache\CacheManagerConfiguration.cs" />
+    <Compile Include="MemoryCache\ICacheManagerConfiguration.cs" />
+    <Compile Include="MemoryCache\IDumpCriteria.cs" />
+    <Compile Include="MemoryCache\SizeDumpCriteria.cs" />
     <Compile Include="Utilities\FileTracker.cs" />
     <Compile Include="MemoryCache\IDataReader.cs" />
     <Compile Include="MemoryCache\IDataWriter.cs" />
