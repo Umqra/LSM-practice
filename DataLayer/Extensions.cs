@@ -13,6 +13,15 @@ namespace DataLayer
                 .GroupBy(t => t.Index / size, t => t.Item);
         }
 
+        public static IEnumerable<T> MergeWith<T>(this IEnumerable<T> first, IEnumerable<T> second)
+        {
+            using (var firstEnumerator = first.GetEnumerator())
+            using (var secondEnumerator = second.GetEnumerator())
+            {
+                
+            }
+        }
+
         public static bool LessThan(this string a, string b)
         {
             return string.Compare(a, b, StringComparison.Ordinal) < 0;

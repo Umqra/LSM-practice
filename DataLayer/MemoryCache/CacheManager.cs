@@ -8,7 +8,7 @@ using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
 using DataLayer.Utilities;
 
-namespace DataLayer.MemoryCopy
+namespace DataLayer.MemoryCache
 {
     public class CacheManagerConfiguration
     {

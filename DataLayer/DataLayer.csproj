@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,15 +48,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MemoryCache\IDataReader.cs" />
+    <Compile Include="MemoryCache\IDataWriter.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="DataModel\ItemSerializer.cs" />
     <Compile Include="DiskTablesMerger.cs" />
     <Compile Include="DiskTable\DiskTableManager.cs" />
     <Compile Include="DiskTable\IDiskTableManager.cs" />
-    <Compile Include="MemoryCopy\CacheManager.cs" />
-    <Compile Include="MemoryCopy\IMemoryTable.cs" />
-    <Compile Include="MemoryCopy\DataStorage.cs" />
-    <Compile Include="MemoryCopy\Cache.cs" />
+    <Compile Include="MemoryCache\CacheManager.cs" />
+    <Compile Include="MemoryCache\IDataStorage.cs" />
+    <Compile Include="MemoryCache\DataStorage.cs" />
+    <Compile Include="MemoryCache\Cache.cs" />
     <Compile Include="OperationLog\IOperationLogReader.cs" />
     <Compile Include="OperationLog\IOperationLogRepairer.cs" />
     <Compile Include="OperationLog\IOperationLogWriter.cs" />
@@ -79,8 +82,6 @@
     <Compile Include="DiskTable\DiskTable.cs" />
     <Compile Include="Utilities\FileData.cs" />
     <Compile Include="Utilities\IFileData.cs" />
-    <Compile Include="Warmup\IOperationLogApplier.cs" />
-    <Compile Include="Warmup\OperationLogApplier.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

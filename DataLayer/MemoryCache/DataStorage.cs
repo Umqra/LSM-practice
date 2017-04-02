@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using DataLayer.DataModel;
 
-namespace DataLayer.MemoryCopy
+namespace DataLayer.MemoryCache
 {
     public class DataStorage : IDataStorage
     {

@@ -56,7 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MemoryHash_Tests.cs" />
+    <Compile Include="MemoryCache_Tests.cs" />
     <Compile Include="MockFile.cs" />
     <Compile Include="OperationLogTests_part1.cs" />
     <Compile Include="OperationLog_Test.cs" />

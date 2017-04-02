@@ -4,7 +4,7 @@ using DataLayer.DataModel;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
 
-namespace DataLayer.MemoryCopy
+namespace DataLayer.MemoryCache
 {
     public class Cache : IDataStorage, IDisposable
     {

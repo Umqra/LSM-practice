@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DataLayer.MemoryCopy;
+using DataLayer.MemoryCache;
 
 namespace DataLayer.DiskTable
 {

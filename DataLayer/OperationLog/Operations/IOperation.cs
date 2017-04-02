@@ -1,4 +1,4 @@
-using DataLayer.MemoryCopy;
+using DataLayer.MemoryCache;
 
 namespace DataLayer.OperationLog.Operations
 {

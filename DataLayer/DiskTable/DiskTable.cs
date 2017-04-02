@@ -4,11 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using C5;
 using DataLayer.DataModel;
-using DataLayer.MemoryCopy;
+using DataLayer.MemoryCache;
 
 namespace DataLayer.DiskTable
 {
-    public class DiskTable
+    public class DiskTable : IDataReader
     {
         private readonly DiskTableConfiguration configuration;
         private readonly TreeDictionary<string, long> tableIndex;
@@ -62,6 +62,18 @@ namespace DataLayer.DiskTable
                 }
             }
             return null;
+        }
+
+        public IEnumerable<Item> GetAllItems()
+        {
+            using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
+            {
+                while (stream.CanRead)
+                {
+                    var item = configuration.Serializer.Deserialize(stream);
+                    yield return item;
+                }
+            }
         }
     }
 }
