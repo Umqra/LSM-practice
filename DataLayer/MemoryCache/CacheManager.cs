@@ -6,11 +6,14 @@ using System.Linq;
 using DataLayer.DataModel;
 using DataLayer.OperationLog;
 using DataLayer.OperationLog.Operations;
+using NLog;
 
 namespace DataLayer.MemoryCache
 {
     public class CacheManager : IDataStorage, IDisposable
     {
+        private ILogger logger = LogManager.GetCurrentClassLogger();
+
         private FileInfoBase cacheLogFile;
         private readonly ICacheManagerConfiguration configuration;
         private Cache currentCache;
@@ -19,8 +22,10 @@ namespace DataLayer.MemoryCache
 
         public CacheManager(ICacheManagerConfiguration configuration)
         {
+            logger.Info($"Initialize Cache Manager from directory {configuration.OperationLogsTracker.WorkingDirectory.FullName}");
             this.configuration = configuration;
             cacheLogFile = GetValidCache();
+            logger.Info($"Current operation log: {cacheLogFile.Name}");
             currentCache = InitializeCacheWithLog(cacheLogFile);
         }
 
@@ -68,12 +73,15 @@ namespace DataLayer.MemoryCache
 
         private void DumpCache()
         {
+            logger.Info($"Dump cache to disk: current size {currentCache.Size}");
+
             currentCache.PrepareToDump();
             currentCache.Dispose();
             var oldCache = currentCache;
             var oldCacheFile = cacheLogFile;
             cacheLogFile = configuration.OperationLogsTracker.CreateNewFile();
             currentCache = InitializeCacheWithLog(cacheLogFile);
+            logger.Info($"New cache file: {cacheLogFile.Name}");
 
             configuration.DiskTableManager.DumpCache(oldCache, () => oldCacheFile.Delete());
         }
@@ -90,15 +98,9 @@ namespace DataLayer.MemoryCache
         private Cache InitializeCacheWithLog(FileInfoBase logFile)
         {
             var dataStorage = new DataStorage();
-            using (
-                var reader = new OperationLogReader(logFile.Open(FileMode.OpenOrCreate, FileAccess.Read),
-                    new OperationSerializer()))
-            {
-                IOperation operation;
-                while (reader.Read(out operation))
-                    operation.Apply(dataStorage);
-            }
-
+            foreach (var operation in ReadOperationLog(logFile))
+                operation.Apply(dataStorage);
+            logger.Info($"Initialize cache from log file: {logFile.Name}. Successfully loaded {dataStorage.Size} items");
             var cacheLogWriter = new OperationLogWriter(
                 logFile.Open(FileMode.Append, FileAccess.Write),
                 new OperationSerializer());
@@ -117,8 +119,13 @@ namespace DataLayer.MemoryCache
                 candidateForRestore.Add(logFile);
             }
             if (candidateForRestore.Count == 0)
+            {
+                logger.Info("No operation logs found, create new");
                 return configuration.OperationLogsTracker.CreateNewFile();
+            }
             //TODO: Notification if more than one candidate
+            if (candidateForRestore.Count > 1)
+                logger.Warn($"Found more than one not-finished operation logs: {string.Join(", ", candidateForRestore.Select(f => f.Name))}");
             return candidateForRestore.First();
         }
 

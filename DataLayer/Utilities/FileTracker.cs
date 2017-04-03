@@ -9,13 +9,13 @@ namespace DataLayer.Utilities
 {
     public class FileTracker : IFileTracker
     {
-        private readonly DirectoryInfoBase workingDirectory;
+        public DirectoryInfoBase WorkingDirectory { get; }
         private readonly IFileInfoFactory fileFactory;
         private string formatString;
         private Regex parsingRegex;
         public FileTracker(string formatString, DirectoryInfoBase workingDirectory, IFileInfoFactory fileFactory)
         {
-            this.workingDirectory = workingDirectory;
+            this.WorkingDirectory = workingDirectory;
             this.fileFactory = fileFactory;
             ParseFormatString(formatString);
         }
@@ -33,18 +33,37 @@ namespace DataLayer.Utilities
                 throw new ArgumentException($"Expected format string with exactly one substitution group {{}}, but got '{format}'");
         }
 
-        public IEnumerable<FileInfoBase> Files => workingDirectory
-            .GetFiles()
-            .Where(f => parsingRegex.IsMatch(f.Name));
+        public IEnumerable<FileInfoBase> Files
+        {
+            get
+            {
+                //TODO: lock with IEnumerable
+                lock (WorkingDirectory)
+                {
+                    return WorkingDirectory
+                        .GetFiles()
+                        .Where(f => parsingRegex.IsMatch(f.Name));
+                }
+            }
+        }
+
         public FileInfoBase CreateNewFile()
         {
-            var maxId = 0;
-            foreach (var file in Files)
+            //TODO: too big lock-area?
+            lock (WorkingDirectory)
             {
-                var match = parsingRegex.Match(file.Name);
-                maxId = Math.Max(maxId, int.Parse(match.Groups[1].Value));
+                var maxId = 0;
+                foreach (var file in Files)
+                {
+                    var match = parsingRegex.Match(file.Name);
+                    maxId = Math.Max(maxId, int.Parse(match.Groups[1].Value));
+                }
+                var newFile =
+                    fileFactory.FromFileName(Path.Combine(WorkingDirectory.FullName,
+                        string.Format(formatString, maxId + 1)));
+                newFile.Create().Dispose();
+                return newFile;
             }
-            return fileFactory.FromFileName(Path.Combine(workingDirectory.FullName, string.Format(formatString, maxId + 1)));
         }
     }
 }

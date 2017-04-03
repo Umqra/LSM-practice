@@ -22,9 +22,9 @@ namespace LSMpractice
         static void Main(string[] args)
         {
             var directory = Directory.CreateDirectory("database");
-            var database = new Database(directory, new SizeDumpCriteria(10), new FileInfoFactory());
-            for (int i = 1; i <= 100; i++)
-                database.Add(Item.CreateItem(i.ToString(), i.ToString()));
+            var database = new Database(directory, new SizeDumpCriteria(100001), new FileInfoFactory());
+            //for (int i = 1; i <= 100001 * 128; i++)
+            //    database.Add(Item.CreateItem(i.ToString(), i.ToString()));
             while (true)
             {
                 string line = Console.ReadLine();

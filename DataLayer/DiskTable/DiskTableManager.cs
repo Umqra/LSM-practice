@@ -10,6 +10,7 @@ using C5;
 using DataLayer.DataModel;
 using DataLayer.MemoryCache;
 using DataLayer.Utilities;
+using NLog;
 
 namespace DataLayer.DiskTable
 {
@@ -17,7 +18,7 @@ namespace DataLayer.DiskTable
     {
         IFileTracker DiskTablesTracker { get; }
     }
-    public class DiskTableManagerConfiguraiton : IDiskTableManagerConfiguration
+    public class DiskTableManagerConfiguration : IDiskTableManagerConfiguration
     {
         public IFileTracker DiskTablesTracker { get; set; }
     }
@@ -36,6 +37,8 @@ namespace DataLayer.DiskTable
 
     public class DiskTablesQueue : IEnumerable<DiskTable>
     {
+        private ILogger logger = LogManager.GetCurrentClassLogger();
+
         private readonly DiskTableManager diskTableManager;
         private readonly SynchronizedCollection<QueueEntry<DiskTable>> diskTables;
 
@@ -85,7 +88,14 @@ namespace DataLayer.DiskTable
                 parents[0].StartMerging = parents[1].StartMerging = true;
             }
             
+            logger.Info("Merge disk tables: " +
+                        $"{parents[0].Value.Configuration.TableFile.Name} and " +
+                        $"{parents[1].Value.Configuration.TableFile.Name}");
             var merged = await diskTableManager.MergeDiskTables(parents[0].Value, parents[1].Value);
+            logger.Info($"Created merge result: {merged.Configuration.TableFile.Name} after merging:" +
+                        $"{parents[0].Value.Configuration.TableFile.Name} and" +
+                        $"{parents[1].Value.Configuration.TableFile.Name}");
+
             return new DiskTablesMergeInfo(merged, parents.Select(parent => parent.Value));
         }
 
@@ -120,13 +130,16 @@ namespace DataLayer.DiskTable
 
     public class DiskTableManager : IDiskTableManager
     {
-        private readonly DiskTableManagerConfiguraiton configuration;
+        private ILogger logger = LogManager.GetCurrentClassLogger();
+
+        private readonly IDiskTableManagerConfiguration configuration;
         private const int DefaultIndexSpanSize = 100;
         private readonly SynchronizedCollection<DiskTablesQueue> diskTableLevels;
         private readonly SynchronizedCollection<Cache> dumpingCachesQueue;
 
-        public DiskTableManager(DiskTableManagerConfiguraiton configuration)
+        public DiskTableManager(IDiskTableManagerConfiguration configuration)
         {
+            logger.Info($"Initialize Disk Table Manager from directory: {configuration.DiskTablesTracker.WorkingDirectory.FullName}");
             this.configuration = configuration;
             diskTableLevels = new SynchronizedCollection<DiskTablesQueue>();
             dumpingCachesQueue = new SynchronizedCollection<Cache>();
@@ -135,6 +148,7 @@ namespace DataLayer.DiskTable
 
         private void InitializeDiskTables()
         {
+            logger.Info("Load disk tables");
             foreach (var diskTableFile in configuration.DiskTablesTracker.Files)
             {
                 int diskTableLevel;
@@ -145,6 +159,7 @@ namespace DataLayer.DiskTable
                     diskTableLevel = binaryReader.ReadInt32();
                     diskTableIndex = DiskTableIndex.Deserialize(stream).Result;
                 }
+                logger.Info($"Found disk table: {diskTableFile.Name} from level {diskTableLevel}");
                 AddDiskTable(new DiskTable(new DiskTableConfiguration
                 {
                     Serializer = new ItemSerializer(),
@@ -181,6 +196,7 @@ namespace DataLayer.DiskTable
 
         private void AddDiskTable(DiskTable diskTable, int level)
         {
+            logger.Info($"Add disk table {diskTable.Configuration.TableFile.Name} to level {level}");
             lock (diskTableLevels)
             {
                 while (diskTableLevels.Count <= level)
@@ -205,7 +221,10 @@ namespace DataLayer.DiskTable
 
                     //TODO: parent can handle query right now(from concurrent thread) and we may interrupt it
                     foreach (var parent in mergeResult.Parents)
+                    {
                         diskTableLevels[level].Remove(parent);
+                        parent.Delete();
+                    }
                 });
             }
         }
@@ -216,7 +235,6 @@ namespace DataLayer.DiskTable
             dumpingCachesQueue.Add(cache);
             Task.Run(async () => await DiskTable.DumpCache(diskTableConfig, cache)).ContinueWith(t =>
             {
-                
                 AddDiskTable(t.Result, 0);
                 //TODO: removing by reference is TOO slow
                 dumpingCachesQueue.Remove(cache);

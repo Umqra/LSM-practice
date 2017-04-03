@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using C5;
 using DataLayer.DataModel;
 using DataLayer.MemoryCache;
+using NLog;
 
 namespace DataLayer.DiskTable
 {
@@ -60,7 +61,9 @@ namespace DataLayer.DiskTable
 
     public class DiskTable : IDataReader
     {
-        private readonly DiskTableConfiguration configuration;
+        private static ILogger logger = LogManager.GetCurrentClassLogger();
+
+        public DiskTableConfiguration Configuration { get; }
         private readonly DiskTableIndex tableIndex;
         public int Level { get; }
         private C5.KeyValuePair<string, long> MinKey => tableIndex.TableIndex.FindMin();
@@ -68,7 +71,7 @@ namespace DataLayer.DiskTable
 
         public DiskTable(DiskTableConfiguration configuration, int level, DiskTableIndex tableIndex)
         {
-            this.configuration = configuration;
+            this.Configuration = configuration;
             Level = level;
             this.tableIndex = tableIndex;
         }
@@ -79,12 +82,12 @@ namespace DataLayer.DiskTable
                 return null;
             var predecessor = tableIndex.TableIndex.WeakPredecessor(key);
             var startOffset = predecessor.Value;
-            using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
+            using (var stream = Configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
             {
                 stream.Seek(startOffset, SeekOrigin.Begin);
                 while (stream.CanRead)
                 {
-                    var item = configuration.Serializer.Deserialize(stream);
+                    var item = Configuration.Serializer.Deserialize(stream);
                     if (item.Key == key)
                         return item;
                     if (key.LessThan(item.Key))
@@ -96,11 +99,16 @@ namespace DataLayer.DiskTable
 
         public IEnumerable<Item> GetAllItems()
         {
-            using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
+            using (var stream = Configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Read))
             {
-                while (stream.CanRead)
+                //TODO: Disk table format must be specified in ONE place
+                stream.Seek(-8, SeekOrigin.End);
+                var endPosition = stream.ReadLongAsync().Result;
+                stream.Seek(4, SeekOrigin.Begin);
+
+                while (stream.CanRead && stream.Position < endPosition)
                 {
-                    var item = configuration.Serializer.Deserialize(stream);
+                    var item = Configuration.Serializer.Deserialize(stream);
                     yield return item;
                 }
             }
@@ -114,6 +122,7 @@ namespace DataLayer.DiskTable
         public static async Task<DiskTable> DumpItems(DiskTableConfiguration configuration, int level,
             IEnumerable<Item> items)
         {
+            logger.Info($"Dump items to disk table {configuration.TableFile.Name}");    
             var tableIndex = new DiskTableIndex();
             using (var stream = configuration.TableFile.Open(FileMode.OpenOrCreate, FileAccess.Write))
             {
@@ -133,12 +142,14 @@ namespace DataLayer.DiskTable
                 }
                 await tableIndex.Serialize(stream);
             }
+            logger.Info($"All items dumped to disk table: {configuration.TableFile.Name}");
             return new DiskTable(configuration, level, tableIndex);
         }
 
         public void Delete()
         {
-            configuration.TableFile.Delete();
+            logger.Info($"Delete disk table: {Configuration.TableFile.Name}");
+            Configuration.TableFile.Delete();
         }
     }
 }

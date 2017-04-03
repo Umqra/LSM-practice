@@ -62,5 +62,18 @@ namespace DataLayerTests
             var fileTracker = new FileTracker("log-{0}.txt", directory, new MockFileInfoFactory(fileSystem));
             fileTracker.CreateNewFile().Name.Should().Be("log-4.txt");
         }
+
+        [Test]
+        public void TestManyNewFilesCreation()
+        {
+            var directory = CreateDirectory(@"c:\path",
+                @"c:\path\log-1.txt",
+                @"c:\path\log-3.txt",
+                @"c:\path\readme.txt",
+                @"c:\path\log-0.old");
+            var fileTracker = new FileTracker("log-{0}.txt", directory, new MockFileInfoFactory(fileSystem));
+            fileTracker.CreateNewFile().Name.Should().Be("log-4.txt");
+            fileTracker.CreateNewFile().Name.Should().Be("log-5.txt");
+        }
     }
 }

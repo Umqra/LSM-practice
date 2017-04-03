@@ -31,6 +31,11 @@ namespace DataLayer
                     }
                     yield return secondItem;
                 }
+                while (firstContinue)
+                {
+                    yield return enumerator.Current;
+                    firstContinue &= enumerator.MoveNext();
+                }
             }
         }
 

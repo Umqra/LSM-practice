@@ -5,6 +5,7 @@ namespace DataLayer.Utilities
 {
     public interface IFileTracker
     {
+        DirectoryInfoBase WorkingDirectory { get; }
         IEnumerable<FileInfoBase> Files { get; }
         FileInfoBase CreateNewFile();
     }

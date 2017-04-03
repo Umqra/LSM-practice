@@ -19,7 +19,7 @@ namespace DataLayer
         public Database(DirectoryInfoBase workingDirectory, IDumpCriteria dumpCriteria, IFileInfoFactory fileFactory)
         {
             this.workingDirectory = workingDirectory;
-            diskTableManager = new DiskTableManager(new DiskTableManagerConfiguraiton
+            diskTableManager = new DiskTableManager(new DiskTableManagerConfiguration
             {
                 DiskTablesTracker = new FileTracker("sstable-{0}.txt", workingDirectory, fileFactory)
             });
