@@ -4,12 +4,14 @@ using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DataLayer;
 using DataLayer.DataModel;
 using DataLayer.MemoryCache;
+using DataLayer.OperationLog.Operations;
 using FluentAssertions;
 using NUnit.Framework.Internal;
 using NUnit.Framework;
@@ -125,10 +127,40 @@ namespace DataLayerTests
             }
             Task.Delay(200).Wait();
 
-            directory.GetFiles().Select(f => f.Name).Should().BeEquivalentTo(
+            directory.GetFiles().Where(f => f.Exists).Select(f => f.Name).Should().BeEquivalentTo(
                 "log-3.txt",
-                "sstable-1.txt",
-                "sstable-2.txt");
+                "sstable-3.txt");
+        }
+
+        [Test]
+        public void TestRandomOperations()
+        {
+            int count = 1000;
+            var dictionary = new Dictionary<string, string>();
+            var random = new Random(0);
+            using (var database = CreateDatabase(20))
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    var key = random.Next(100).ToString();
+                    var type = random.Next(2);
+                    if (type == 0)
+                    {
+                        database.Delete(key);
+                        dictionary.Remove(key);
+                    }
+                    else if (type == 1)
+                    {
+                        var value = random.Next(10).ToString();
+                        database.Add(Item.CreateItem(key, value));
+                        dictionary[key] = value;
+                    }
+                    else
+                    {
+                        database.Get(key).Value.Should().Be(dictionary[key]);
+                    }
+                }
+            }
         }
     }
 }

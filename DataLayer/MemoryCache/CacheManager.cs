@@ -83,7 +83,11 @@ namespace DataLayer.MemoryCache
             currentCache = InitializeCacheWithLog(cacheLogFile);
             logger.Info($"New cache file: {cacheLogFile.Name}");
 
-            configuration.DiskTableManager.DumpCache(oldCache, () => oldCacheFile.Delete());
+            configuration.DiskTableManager.DumpCache(oldCache, () =>
+            {
+                logger.Info($"Delete old cache file: {oldCacheFile.Name}");
+                oldCacheFile.Delete();
+            });
         }
 
         private void DumpIfNeeded()
