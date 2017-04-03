@@ -11,32 +11,11 @@ namespace DataLayer.MemoryCache
 {
     public class CacheManager : IDataStorage, IDisposable
     {
+        private FileInfoBase cacheLogFile;
         private readonly ICacheManagerConfiguration configuration;
-        private readonly FileInfoBase cacheLogFile;
         private Cache currentCache;
 
-        private Cache CurrentCache
-        {
-            get
-            {
-                lock (cacheLogFile)
-                {
-                    if (configuration.DumpCriteria.ShouldDump(currentCache))
-                        DumpCache();
-                    return currentCache;
-                }
-            }
-        }
-
-        private void DumpCache()
-        {
-            currentCache.PrepareToDump();
-            currentCache.Dispose();
-            configuration.DiskTableManager.DumpCache(currentCache, () => cacheLogFile.Delete());
-            currentCache = InitializeCacheWithLog(configuration.OperationLogsTracker.CreateNewFile());
-        }
-
-        public int Size => CurrentCache?.Size ?? 0;
+        public int Size => currentCache?.Size ?? 0;
 
         public CacheManager(ICacheManagerConfiguration configuration)
         {
@@ -47,33 +26,73 @@ namespace DataLayer.MemoryCache
 
         public void Add(Item item)
         {
-            CurrentCache.Add(item);
+            lock (currentCache)
+            {
+                currentCache.Add(item);
+            }
+            DumpIfNeeded();
         }
 
         public void Delete(string key)
         {
-            CurrentCache.Delete(key);
+            lock (currentCache)
+            {
+                currentCache.Delete(key);
+            }
+            DumpIfNeeded();
         }
 
         public Item Get(string key)
         {
-            return CurrentCache.Get(key);
+            lock (currentCache)
+            {
+                return currentCache.Get(key);
+            }
         }
 
         public IEnumerable<Item> GetAllItems()
         {
-            return CurrentCache.GetAllItems();
+            lock (currentCache)
+            {
+                return currentCache.GetAllItems();
+            }
         }
 
         public void Dispose()
         {
-            CurrentCache?.Dispose();
+            lock (currentCache)
+            {
+                currentCache?.Dispose();
+            }
+        }
+
+        private void DumpCache()
+        {
+            currentCache.PrepareToDump();
+            currentCache.Dispose();
+            var oldCache = currentCache;
+            var oldCacheFile = cacheLogFile;
+            cacheLogFile = configuration.OperationLogsTracker.CreateNewFile();
+            currentCache = InitializeCacheWithLog(cacheLogFile);
+
+            configuration.DiskTableManager.DumpCache(oldCache, () => oldCacheFile.Delete());
+        }
+
+        private void DumpIfNeeded()
+        {
+            lock (currentCache)
+            {
+                if (configuration.DumpCriteria.ShouldDump(currentCache))
+                    DumpCache();
+            }
         }
 
         private Cache InitializeCacheWithLog(FileInfoBase logFile)
         {
             var dataStorage = new DataStorage();
-            using (var reader = new OperationLogReader(logFile.Open(FileMode.OpenOrCreate, FileAccess.Read), new OperationSerializer()))
+            using (
+                var reader = new OperationLogReader(logFile.Open(FileMode.OpenOrCreate, FileAccess.Read),
+                    new OperationSerializer()))
             {
                 IOperation operation;
                 while (reader.Read(out operation))
@@ -93,7 +112,7 @@ namespace DataLayer.MemoryCache
             {
                 //TODO: read EACH log file TWICE!
                 var operation = ReadOperationLog(logFile).ToList();
-                if (operation.Last() is DumpOperation)
+                if (operation.Any() && operation.Last() is DumpOperation)
                     continue;
                 candidateForRestore.Add(logFile);
             }

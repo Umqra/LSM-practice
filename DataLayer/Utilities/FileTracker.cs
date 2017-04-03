@@ -10,11 +10,13 @@ namespace DataLayer.Utilities
     public class FileTracker : IFileTracker
     {
         private readonly DirectoryInfoBase workingDirectory;
+        private readonly IFileInfoFactory fileFactory;
         private string formatString;
         private Regex parsingRegex;
-        public FileTracker(string formatString, DirectoryInfoBase workingDirectory)
+        public FileTracker(string formatString, DirectoryInfoBase workingDirectory, IFileInfoFactory fileFactory)
         {
             this.workingDirectory = workingDirectory;
+            this.fileFactory = fileFactory;
             ParseFormatString(formatString);
         }
 
@@ -42,7 +44,7 @@ namespace DataLayer.Utilities
                 var match = parsingRegex.Match(file.Name);
                 maxId = Math.Max(maxId, int.Parse(match.Groups[1].Value));
             }
-            return new FileInfo(Path.Combine(workingDirectory.FullName, string.Format(formatString, maxId + 1)));
+            return fileFactory.FromFileName(Path.Combine(workingDirectory.FullName, string.Format(formatString, maxId + 1)));
         }
     }
 }

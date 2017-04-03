@@ -14,10 +14,11 @@ namespace DataLayerTests
     [TestFixture]
     class FileTrackerTests
     {
+        private MockFileSystem fileSystem;
         public DirectoryInfoBase CreateDirectory(string path, params string[] files)
         {
             var filesDictionary = files.ToDictionary(file => file, file => new MockFileData(""));
-            var fileSystem = new MockFileSystem(filesDictionary);
+            fileSystem = new MockFileSystem(filesDictionary);
             return new MockDirectoryInfo(fileSystem, path);
         }
 
@@ -26,7 +27,7 @@ namespace DataLayerTests
         [TestCase("{0}-{0}.txt")]
         public void TestIncorrectFormatString(string format)
         {
-            Action trackerFactory = () => new FileTracker(format, CreateDirectory("."));
+            Action trackerFactory = () => new FileTracker(format, CreateDirectory("."), new MockFileInfoFactory(fileSystem));
             trackerFactory.ShouldThrow<ArgumentException>();
         }
 
@@ -35,7 +36,7 @@ namespace DataLayerTests
         [TestCase("very-long-and-complex-name-v1.2-{0}.tar.gz")]
         public void TestCorrectFormatString(string format)
         {
-            new FileTracker(format, CreateDirectory("."));
+            new FileTracker(format, CreateDirectory("."), new MockFileInfoFactory(fileSystem));
         }
 
         [Test]
@@ -46,7 +47,7 @@ namespace DataLayerTests
                 @"c:\path\log-3.txt",
                 @"c:\path\readme.txt",
                 @"c:\path\log-0.old");
-            var fileTracker = new FileTracker("log-{0}.txt", directory);
+            var fileTracker = new FileTracker("log-{0}.txt", directory, new MockFileInfoFactory(fileSystem));
             fileTracker.Files.Select(f => f.Name).Should().BeEquivalentTo("log-1.txt", "log-3.txt");
         }
 
@@ -58,7 +59,7 @@ namespace DataLayerTests
                 @"c:\path\log-3.txt", 
                 @"c:\path\readme.txt",
                 @"c:\path\log-0.old");
-            var fileTracker = new FileTracker("log-{0}.txt", directory);
+            var fileTracker = new FileTracker("log-{0}.txt", directory, new MockFileInfoFactory(fileSystem));
             fileTracker.CreateNewFile().Name.Should().Be("log-4.txt");
         }
     }

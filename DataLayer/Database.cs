@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.IO.Abstractions;
 using DataLayer.DataModel;
 using DataLayer.DiskTable;
 using DataLayer.MemoryCache;
@@ -9,23 +9,24 @@ using DataLayer.Utilities;
 
 namespace DataLayer
 {
-    // управляет memoryhash, disk tables, operationLog и управляет всеми запросами
-    // а так же управляет мерджингом
-    public class Database : IDataStorage
+    //TODO: singletone class?
+    public class Database : IDataStorage, IDisposable
     {
+        private readonly DirectoryInfoBase workingDirectory;
         private readonly DiskTableManager diskTableManager;
         private readonly CacheManager cacheManager;
 
-        public Database(string workingDirectory)
+        public Database(DirectoryInfoBase workingDirectory, IDumpCriteria dumpCriteria, IFileInfoFactory fileFactory)
         {
+            this.workingDirectory = workingDirectory;
             diskTableManager = new DiskTableManager(new DiskTableManagerConfiguraiton
             {
-                DiskTablesTracker = new FileTracker("sstable-{0}.txt", new DirectoryInfo(workingDirectory))
+                DiskTablesTracker = new FileTracker("sstable-{0}.txt", workingDirectory, fileFactory)
             });
             cacheManager = new CacheManager(new CacheManagerConfiguration
             {
-                DumpCriteria  = new SizeDumpCriteria(10),
-                OperationLogsTracker = new FileTracker("log-{0}.txt", new DirectoryInfo(workingDirectory)),
+                DumpCriteria = dumpCriteria,
+                OperationLogsTracker = new FileTracker("log-{0}.txt", workingDirectory, fileFactory),
                 Repairer = new OperationLogRepairer(),
                 DiskTableManager = diskTableManager
             });
@@ -51,6 +52,12 @@ namespace DataLayer
         public void Add(Item item)
         {
             cacheManager.Add(item);
+        }
+
+        public void Dispose()
+        {
+            cacheManager?.Dispose();
+            diskTableManager?.Dispose();;
         }
     }
 }

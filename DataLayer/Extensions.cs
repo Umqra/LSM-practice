@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace DataLayer
 {
@@ -34,6 +37,27 @@ namespace DataLayer
         public static bool LessThan(this string a, string b)
         {
             return string.Compare(a, b, StringComparison.Ordinal) < 0;
+        }
+
+        public static async Task<int> ReadIntAsync(this Stream stream)
+        {
+            byte[] buffer = new byte[4];
+            await stream.ReadAsync(buffer, 0, 4);
+            return BitConverter.ToInt32(buffer, 0);
+        }
+
+        public static async Task<long> ReadLongAsync(this Stream stream)
+        {
+            byte[] buffer = new byte[8];
+            await stream.ReadAsync(buffer, 0, 8);
+            return BitConverter.ToInt64(buffer, 0);
+        }
+
+        public static async Task<string> ReadStringAsync(this Stream stream, int length, Encoding encoding)
+        {
+            byte[] buffer = new byte[length];
+            await stream.ReadAsync(buffer, 0, length);
+            return encoding.GetString(buffer);
         }
     }
 }

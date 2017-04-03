@@ -7,7 +7,7 @@ using DataLayer.MemoryCache;
 
 namespace DataLayer.DiskTable
 {
-    public interface IDiskTableManager : IDataReader
+    public interface IDiskTableManager : IDataReader, IDisposable
     {
         void DumpCache(Cache cache, Action cleanupAction);
     }

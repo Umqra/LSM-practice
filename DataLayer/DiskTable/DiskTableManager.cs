@@ -138,10 +138,19 @@ namespace DataLayer.DiskTable
             foreach (var diskTableFile in configuration.DiskTablesTracker.Files)
             {
                 int diskTableLevel;
+                DiskTableIndex diskTableIndex;
                 using (var stream = diskTableFile.OpenRead())
-                using (var binaryReader = new BinaryReader(stream))
+                {
+                    var binaryReader = new BinaryReader(stream);
                     diskTableLevel = binaryReader.ReadInt32();
-                //TODO: create new disk table
+                    diskTableIndex = DiskTableIndex.Deserialize(stream).Result;
+                }
+                AddDiskTable(new DiskTable(new DiskTableConfiguration
+                {
+                    Serializer = new ItemSerializer(),
+                    IndexSpanSize = DefaultIndexSpanSize,
+                    TableFile = diskTableFile
+                }, diskTableLevel, diskTableIndex), diskTableLevel);
             }
         }
 
@@ -207,6 +216,7 @@ namespace DataLayer.DiskTable
             dumpingCachesQueue.Add(cache);
             Task.Run(async () => await DiskTable.DumpCache(diskTableConfig, cache)).ContinueWith(t =>
             {
+                
                 AddDiskTable(t.Result, 0);
                 //TODO: removing by reference is TOO slow
                 dumpingCachesQueue.Remove(cache);
@@ -228,7 +238,18 @@ namespace DataLayer.DiskTable
         public async Task<DiskTable> MergeDiskTables(DiskTable first, DiskTable second)
         {
             var mergedConfiguration = CreateDiskTableConfiguration();
-            return await DiskTable.DumpItems(mergedConfiguration, first.Level + second.Level, first.GetAllItems().MergeWith(second.GetAllItems()));
+            return await DiskTable.DumpItems(mergedConfiguration, Math.Max(first.Level, second.Level) + 1, first.GetAllItems().MergeWith(second.GetAllItems()));
+        }
+
+        public void Dispose()
+        {
+            foreach (var cache in dumpingCachesQueue)
+                cache.Dispose();
+            foreach (var level in diskTableLevels)
+            foreach (var diskTable in level)
+            {
+                //TODO: do something with diskTables
+            }
         }
     }
 }

@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DatabaseTests.cs" />
     <Compile Include="FileTrackerTests.cs" />
     <Compile Include="MemoryCacheTests.cs" />
     <Compile Include="OperationLogTests.cs" />

@@ -6,24 +6,28 @@ namespace DataLayer.MemoryCache
 {
     public class DataStorage : IDataStorage
     {
-        private readonly ConcurrentDictionary<string, Item> storage;
+        private readonly SortedDictionary<string, Item> storage;
         public int Size => storage.Count;
 
         public DataStorage()
         {
-            storage = new ConcurrentDictionary<string, Item>();
+            storage = new SortedDictionary<string, Item>();
         }
 
         public void Add(Item item)
         {
-            storage[item.Key] = item;
+            lock(storage)
+                storage[item.Key] = item;
         }
 
         public Item Get(string key)
         {
             Item result;
-            if (!storage.TryGetValue(key, out result))
-                return null;
+            lock (storage)
+            {
+                if (!storage.TryGetValue(key, out result))
+                    return null;
+            }
             if (result.IsTombStone)
                 return null;
             return result;
@@ -31,12 +35,16 @@ namespace DataLayer.MemoryCache
 
         public void Delete(string key)
         {
-            storage[key] = Item.CreateTombStone(key);
+            lock (storage)
+            {
+                storage[key] = Item.CreateTombStone(key);
+            }
         }
 
         public IEnumerable<Item> GetAllItems()
         {
-            return storage.Values;
+            lock(storage)
+                return storage.Values;
         }
     }
 }
